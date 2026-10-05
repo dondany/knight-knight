@@ -1,0 +1,170 @@
+# Game design
+
+The numbers here mirror `index.html`. The unit and item tables are generated: after changing
+content run `tools/sim.py tools/units.js` and paste the output over them.
+
+## Run structure
+
+- 5 lives, 10 wins to finish. A loss costs 1 life; a draw costs nothing. Every battle advances the turn.
+- 10 gold each turn. Unspent gold is lost.
+- Units and items cost 3. A reroll costs 1. Selling a unit returns gold equal to its level.
+- 5 army slots. Slot 0 is the front (drawn on the right in the shop).
+- Stats cap at 50.
+
+| Turn | Unit tiers on offer | Recruit slots | Item slots |
+|---|---|---|---|
+| 1–2 | 1 | 3 | 1 |
+| 3–4 | 1–2 | 3 | 1 |
+| 5–6 | 1–3 | 4 | 2 |
+| 7–8 | 1–4 | 4 | 2 |
+| 9–10 | 1–5 | 5 | 2 |
+| 11+ | 1–6 | 5 | 2 |
+
+Recruits and items are drawn uniformly from everything unlocked. Frozen entries survive rerolls
+and turn changes.
+
+## Merging and levels
+
+- Dropping a unit on a copy of itself merges them: the result takes the higher attack and the
+  higher health of the two, plus 1 each, and the combined experience plus 1.
+- Level 2 at 2 experience (three copies), level 3 at 5 (six copies). Level 3 units cannot merge.
+- Gear stays with the unit being merged into; if it has none it inherits the other's.
+- Levelling up adds one bonus recruit from the next tier up to the shop (at most 6 recruits shown).
+- Every ability has three strengths, one per level.
+
+## Armies
+
+A bonus switches on with 2 units of an army and improves with 4. Duplicates count.
+
+| Army | Bonus | 2 units | 4 units | Where it applies |
+|---|---|---|---|---|
+| Medieval | Tithe | +1 gold at the start of each turn | +3 gold | Shop |
+| Vikings | Blood Rage | When a Viking faints, the other Vikings gain +1/+1 | +2/+2 | Battle |
+| Spartans | Phalanx | Spartans take 1 less damage (min 1) | 2 less | Battle |
+| Egyptians | Afterlife | The first Egyptian to faint rises as a Mummy with half its attack and half its starting health | Every Egyptian rises once | Battle |
+| Romans | Drill | End of turn: a random Roman gains +1/+1 permanently | Every Roman does | Shop |
+| Japanese | Bushido | Each Japanese unit deals +2 damage with its first attack | +5 | Battle |
+
+**Mercenaries are wild.** Each one adds 1 to the count of every army that has at least one real
+member on the team, and receives those armies' bonuses itself. A team of only mercenaries has no
+bonus. Consequence worth knowing: four units from four different armies plus one mercenary turns
+on four tier-1 bonuses at once.
+
+Mummies are tokens: no ability, no army bonus, and they are never raised a second time.
+
+## Units
+
+`ATK/HP` are base stats. Sprite is the cell in `characters.PNG`.
+
+| Army | Unit | Tier | ATK/HP | Ability | Effect (Lv1 / Lv2 / Lv3) | Sprite (col,row) | Key |
+|---|---|---|---|---|---|---|---|
+| Medieval | Peasant | 1 | 3/1 | Harvest | Sell: gain 1 / 2 / 3 extra gold. | 2,0 | `peasant` |
+| Medieval | Longbowman | 2 | 2/2 | Volley | Start of battle: deal 2 / 4 / 6 damage to the rearmost enemy. | 0,0 | `longbow` |
+| Medieval | Knight | 3 | 3/4 | Plate Armor | Blocks the first hit / 2 hits / 3 hits it takes each battle. | 1,0 | `knight` |
+| Medieval | Halberdier | 4 | 4/5 | Reach | Before attack: deal 3 / 6 / 9 damage to the enemy behind the front. | 4,0 | `halberdier` |
+| Medieval | King | 6 | 5/7 | Royal Decree | Start of battle: give every other friend +2/+2 / +4/+4 / +6/+6. | 3,0 | `king` |
+| Vikings | Raider | 1 | 2/1 | Last Gift | Faint: give a random friend +2/+1 / +4/+2 / +6/+3. | 0,1 | `raider` |
+| Vikings | Berserker | 2 | 2/4 | Fury | Hurt: gain +2 / +4 / +6 attack. | 1,1 | `berserker` |
+| Vikings | Huscarl | 3 | 3/4 | Avenger | Friend ahead faints: gain +2/+2 / +4/+4 / +6/+6. | 2,1 | `huscarl` |
+| Vikings | Skald | 4 | 2/4 | War Horn | Start of battle: give all friends ahead +1/+1 / +2/+2 / +3/+3. | 4,1 | `skald` |
+| Vikings | Jarl | 5 | 6/6 | Rampage | Knockout: deal 5 / 10 / 15 damage to the next enemy. | 3,1 | `jarl` |
+| Spartans | Peltast | 1 | 2/2 | Javelins | Start of battle: deal 1 damage to 1 random enemy / 2 random enemies / 3 random enemies. | 3,2 | `peltast` |
+| Spartans | Hoplite | 2 | 2/3 | Spear Wall | Friend ahead attacks: deal 1 / 2 / 3 damage to the front enemy. | 0,2 | `hoplite` |
+| Spartans | Phalangite | 3 | 2/6 | Aspis | Takes 1 / 2 / 3 less damage from every hit (min 1). | 1,2 | `phalangite` |
+| Spartans | Lochagos | 4 | 3/5 | Hold the Line | Start of battle: give adjacent friends +1/+3 / +2/+6 / +3/+9. | 4,2 | `lochagos` |
+| Spartans | Leonidas | 6 | 7/7 | This is Sparta! | Start of battle: kick the front enemy to the back of their line for 5 / 10 / 15 damage. | 2,2 | `leonidas` |
+| Egyptians | Laborer | 1 | 1/3 | Tribute | Buy: give a random friend +1/+1 / +2/+2 / +3/+3. | 0,3 | `laborer` |
+| Egyptians | Medjay | 2 | 2/3 | Embalmed | Faint: rise as a 2/2 / 4/4 / 6/6 Mummy. | 3,3 | `medjay` |
+| Egyptians | Priest of Set | 3 | 2/4 | Curse | Start of battle: the strongest enemy loses 3 / 6 / 9 attack (min 1). | 1,3 | `priest` |
+| Egyptians | Cleopatra | 5 | 4/5 | Asp | After attack: deal 4 / 8 / 12 damage to the weakest enemy. | 4,3 | `cleopatra` |
+| Egyptians | Pharaoh | 6 | 4/8 | Eternal Kingdom | Friend faints: raise it as a 4/4 / 8/8 / 12/12 Mummy. | 2,3 | `pharaoh` |
+| Romans | Velite | 1 | 3/1 | Parting Shot | Faint: deal 2 / 4 / 6 damage to a random enemy. | 3,4 | `velite` |
+| Romans | Legionary | 2 | 2/3 | Formation | Start of battle: gain +1/+1 / +2/+2 / +3/+3 for each other Roman friend. | 0,4 | `legionary` |
+| Romans | Aquilifer | 3 | 2/4 | Eagle Standard | End of turn: give the friend ahead +1/+1 / +2/+2 / +3/+3 for good. | 2,4 | `aquilifer` |
+| Romans | Centurion | 4 | 4/5 | Command | Before attack: give the friend behind +2/+1 / +4/+2 / +6/+3. | 1,4 | `centurion` |
+| Romans | Caesar | 5 | 5/5 | Veni, Vidi, Vici | Start of battle: deal 3 / 6 / 9 damage to the three front enemies. | 4,4 | `caesar` |
+| Japanese | Ashigaru | 1 | 2/2 | Vanguard | Start of battle: if in the front slot, gain +1/+2 / +2/+4 / +3/+6. | 3,5 | `ashigaru` |
+| Japanese | Ronin | 2 | 3/2 | Blood Price | Knockout: gain +2/+2 / +4/+4 / +6/+6. | 0,5 | `ronin` |
+| Japanese | Yumi Archer | 3 | 1/3 | Arrow Rain | Friend ahead attacks: deal 2 / 4 / 6 damage to the rearmost enemy. | 2,5 | `yumi` |
+| Japanese | Sohei | 4 | 3/6 | Ward | Start of battle: the friend ahead blocks its / the 2 friends ahead block their / the 3 friends ahead block their first hit. | 4,5 | `sohei` |
+| Japanese | Samurai | 5 | 6/4 | Iaido | Strikes first: an enemy it fells cannot strike back. Attacks deal +0 / +3 / +6 damage. | 1,5 | `samurai` |
+| Mercenaries | Sellsword | 3 | 3/4 | Paid in Gold | Wild. End of turn: if you have 2+ unspent gold, gain +1/+1 / +2/+2 / +3/+3 for good. | 2,6 | `sellsword` |
+| Mercenaries | Barbarian | 4 | 4/4 | Frenzy | Wild. After attack: gain +2 / +4 / +6 attack. | 0,6 | `barbarian` |
+
+Trigger vocabulary: *Start of battle* (resolved highest attack first), *Before attack* / *After
+attack* (the front unit), *Friend ahead attacks* (the second unit in line), *Hurt* (took damage
+and survived), *Faint*, *Knockout* (killed the enemy front with its attack), *Friend ahead
+faints*, *Friend faints*, and the shop triggers *Buy*, *Sell*, *End of turn*.
+
+## Items
+
+Supplies are used up. Gear stays on the unit; a unit holds one piece and a new one replaces it.
+
+| Item | Tier | Kind | Effect | Key |
+|---|---|---|---|---|
+| Ration | 1 | Supply | Give a unit +1/+1. | `ration` |
+| Whetstone | 2 | Gear | Attacks deal +3 damage. | `whetstone` |
+| Chainmail | 3 | Gear | Take 2 less damage (min 1). | `chainmail` |
+| Feast | 4 | Supply | Give 3 random units +1/+1. | `feast` |
+| War Manual | 4 | Supply | Give a unit +1 experience. | `manual` |
+| Tower Shield | 5 | Gear | Block the first hit each battle. | `shield` |
+| Ankh | 6 | Gear | Once per battle, return from death as a 1/1. | `ankh` |
+
+## Battle rules in short
+
+1. Start-of-battle abilities fire in order of attack, highest first.
+2. The two front units hit each other at the same time. First-attack and gear bonuses are added to
+   the hit, then blocks and damage reduction apply. Damage never drops below 1 unless blocked.
+3. Support abilities, after-attack abilities and knockouts fire, then deaths resolve: faint
+   ability, Ankh, Afterlife, Blood Rage, then the reactions of surviving friends.
+4. Repeat until a side is empty. Both empty is a draw.
+
+The exact order is in `docs/ARCHITECTURE.md`.
+
+## Opponents
+
+There is no multiplayer. Each rival is produced on the spot by a bot that plays the same shop for
+the same number of turns:
+
+- It favours one random army (and mercenaries), fills empty slots first, merges duplicates, and
+  replaces its weakest unit when a clearly better one shows up.
+- It buys gear for ungeared units, War Manuals and Feasts when the army has 3+ units, and rerolls
+  with whatever gold is left.
+- It wastes 0–2 gold a turn (fixed per rival) so strength varies between opponents.
+- It lines units up by each unit's placement hint, tougher units first within a group.
+- The army's name comes from whichever army it ended up fielding most.
+
+## Balance snapshot
+
+Bot against bot, from `tools/sim.py`. This says how the armies compare when played by the same
+simple bot. It says nothing about how hard the game is for a person, which has not been measured.
+
+```
+battles 2100  draws 13.7%  maxRounds 18  maxEvents 116
+
+win rate by the bot's favoured army (bot vs bot):
+  medieval 39.3%
+  viking   45.6%
+  spartan  40.7%
+  egypt    44.1%
+  roman    48.7%
+  japan    39.9%
+
+bot army strength by turn:
+  turn  1  stats/unit 4.3  tier 1.00  lvl 1.00
+  turn  2  stats/unit 5.2  tier 1.06  lvl 1.10
+  turn  3  stats/unit 5.9  tier 1.34  lvl 1.12
+  turn  4  stats/unit 6.8  tier 1.52  lvl 1.18
+  turn  5  stats/unit 7.8  tier 1.96  lvl 1.23
+  turn  6  stats/unit 8.8  tier 2.21  lvl 1.28
+  turn  7  stats/unit 10.2  tier 2.61  lvl 1.30
+  turn  8  stats/unit 11.2  tier 2.93  lvl 1.32
+  turn  9  stats/unit 13.0  tier 3.33  lvl 1.37
+  turn 10  stats/unit 13.9  tier 3.64  lvl 1.44
+  turn 11  stats/unit 15.5  tier 3.93  lvl 1.46
+  turn 12  stats/unit 16.2  tier 4.16  lvl 1.51
+  turn 13  stats/unit 18.1  tier 4.11  lvl 1.61
+  turn 14  stats/unit 18.7  tier 4.23  lvl 1.73
+
+abilities that never fired: none
+```
