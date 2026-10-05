@@ -3,22 +3,55 @@
 The numbers here mirror `index.html`. The unit and item tables are generated: after changing
 content run `tools/sim.py tools/units.js` and paste the output over them.
 
+## Modes
+
+**Skirmish** is a single run with every army on offer: 5 lives, 10 wins.
+
+**Story** is a campaign across a world map. You start in Camelot owning only the Medieval army.
+Each other region is a short expedition, a fresh run with its own rules:
+
+- 3 lives, and 3 to 5 wins needed depending on the region.
+- Recruits come only from armies you own (Medieval plus every conquered region's army).
+- Tiers unlock one per turn (turn 1 = tier 1 … turn 6 = tier 6), so short runs still reach big units.
+- +1 gold on the first turn for every land already conquered ("Tribute").
+- Rivals field only that region's army, with a smaller army and less gold in the early regions.
+- The battle that would complete the goal is against the region's **champion**: the usual rival
+  army plus a named leader with bonus stats.
+- Win and the region's army is yours for every later expedition. Lose all 3 lives and you are back
+  on the map with nothing lost; retreating from the shop does the same.
+
+A region can be attacked once a road reaches it from conquered land.
+
+| Region | Army unlocked | Wins | Rival army size | Rival gold | Champion | Bonus | Roads to |
+|---|---|---|---|---|---|---|---|
+| Camelot (home) | Medieval | – | – | – | – | – | Norse Fjords, Rome |
+| Norse Fjords | Vikings | 3 | 4 | 6 | Jarl Ragnar (Jarl) | +1/+2 | Camelot, Samarkand |
+| Rome | Romans | 3 | 4 | 5 | Caesar | +1/+2 | Camelot, Sparta |
+| Sparta | Spartans | 4 | 4 | 6 | King Leonidas | none | Rome, Thebes, Samarkand |
+| Thebes | Egyptians | 4 | 5 | 8 | The Pharaoh | +2/+4 | Sparta, Samarkand |
+| Samarkand | Mercenaries | 5 | 5 | 9 | The Warlord (Barbarian) | +2/+4 | Norse Fjords, Sparta, Thebes, Kyoto |
+| Kyoto | Japanese | 5 | 5 | 8 | The Shogun (Samurai) | +1/+2 | Samarkand |
+
+Samarkand's rivals draft from every army (favouring mercenaries), since two units do not make an
+army. Conquering all six ends the story.
+
 ## Run structure
 
-- 5 lives, 10 wins to finish. A loss costs 1 life; a draw costs nothing. Every battle advances the turn.
+- Skirmish: 5 lives, 10 wins. Story expeditions: 3 lives and the region's win count.
+- A loss costs 1 life; a draw costs nothing. Every battle advances the turn.
 - 10 gold each turn. Unspent gold is lost.
 - Units and items cost 3. A reroll costs 1. Selling a unit returns gold equal to its level.
 - 5 army slots. Slot 0 is the front (drawn on the right in the shop).
 - Stats cap at 50.
 
-| Turn | Unit tiers on offer | Recruit slots | Item slots |
-|---|---|---|---|
-| 1–2 | 1 | 3 | 1 |
-| 3–4 | 1–2 | 3 | 1 |
-| 5–6 | 1–3 | 4 | 2 |
-| 7–8 | 1–4 | 4 | 2 |
-| 9–10 | 1–5 | 5 | 2 |
-| 11+ | 1–6 | 5 | 2 |
+| Skirmish turn | Story turn | Unit tiers on offer | Recruit slots | Item slots |
+|---|---|---|---|---|
+| 1–2 | 1 | 1 | 3 | 1 |
+| 3–4 | 2 | 1–2 | 3 | 1 |
+| 5–6 | 3 | 1–3 | 4 | 2 |
+| 7–8 | 4 | 1–4 | 4 | 2 |
+| 9–10 | 5 | 1–5 | 5 | 2 |
+| 11+ | 6+ | 1–6 | 5 | 2 |
 
 Recruits and items are drawn uniformly from everything unlocked. Frozen entries survive rerolls
 and turn changes.
@@ -30,6 +63,7 @@ and turn changes.
 - Level 2 at 2 experience (three copies), level 3 at 5 (six copies). Level 3 units cannot merge.
 - Gear stays with the unit being merged into; if it has none it inherits the other's.
 - Levelling up adds one bonus recruit from the next tier up to the shop (at most 6 recruits shown).
+  In story mode, if no owned army has a unit of that tier, it is the highest tier available below it.
 - Every ability has three strengths, one per level.
 
 ## Armies
@@ -133,6 +167,15 @@ the same number of turns:
 - It wastes 0–2 gold a turn (fixed per rival) so strength varies between opponents.
 - It lines units up by each unit's placement hint, tougher units first within a group.
 - The army's name comes from whichever army it ended up fielding most.
+- Story rivals are the same bot with a restricted pool, an army-size cap and a fixed income
+  (see the region table). Skirmish rivals have no cap and waste 0–2 gold as above.
+
+## Battlefields
+
+The backdrop follows the enemy army's homeland: dusk castle (Medieval), snowfield with falling
+snow (Vikings), green hills and an aqueduct (Romans), rocky coast with a temple (Spartans), desert
+and pyramids with blowing sand (Egyptians), a pink-dawn steppe with yurts (Mercenaries), and a red
+sun over Fuji with drifting petals (Japanese). Purely cosmetic.
 
 ## Balance snapshot
 
@@ -168,3 +211,21 @@ bot army strength by turn:
 
 abilities that never fired: none
 ```
+
+### Story difficulty
+
+From `tools/sim.py tools/story.js`: the same bot plays each expedition 400 times. "conquest%" uses
+the armies a player would typically own by then (regions in table order); "solo" uses only the
+Medieval army. The bot buys greedily and never plays around a champion, so a person should do
+better. The bot actually does worse with more armies to choose from, because it merges less.
+
+```
+region     wins danger | conquest%  boss-battle win%  avg battles | solo conquest%
+norse      3    1      |    88%        46%            6.3        |    91%
+rome       3    1      |    85%        42%            5.2        |    86%
+sparta     4    2      |    70%        32%            6.1        |    86%
+egypt      4    3      |    86%        38%            5.4        |    95%
+steppe     5    3      |    44%        49%            6.6        |    17%
+japan      5    4      |    56%        29%            6.8        |    96%
+```
+

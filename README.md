@@ -19,10 +19,19 @@ The whole game is one static page: `index.html` plus the sprite sheet. No build 
   grow with each level.
 - **Armies.** Field 2 or 4 units from the same army to switch on its bonus. Mercenaries count for
   every army you field.
-- **Fight.** End the turn and your army battles a rival on its own. Win 10 battles before you lose
-  5 lives.
+- **Fight.** End the turn and your army battles a rival on its own.
 - **Tips.** Freeze a recruit to keep it for next turn. Drag a unit down to the shop to sell it.
   Keys: `R` roll, `F` freeze, `S` sell. Hover a unit (or tap it) to read its ability.
+
+## Modes
+
+- **Story.** You rule Camelot and start with only the Medieval army. March across a world map to
+  the Norse Fjords, Rome, Sparta, Thebes, Samarkand and Kyoto. Each land is a short campaign: raise
+  a fresh army, win 3–5 battles with 3 lives, and beat the land's champion in the last one. Conquer
+  it and its army joins your recruits for every campaign after.
+- **Skirmish.** Every army from the start. Win 10 battles before you lose 5 lives.
+
+Both modes save automatically in the browser.
 
 ## Armies
 
@@ -55,6 +64,7 @@ There is nothing to install. Edit `index.html` and reload.
 
 ```sh
 tools/sim.py              # run a few thousand bot-vs-bot battles to check rules and balance
+tools/sim.py tools/story.js   # how often a bot conquers each story region
 tools/embed_sprite.py     # after editing characters.PNG, refresh the copy embedded in index.html
 tools/shot.sh out.png "#demo=shop:7"   # headless Chrome screenshot (macOS, needs Google Chrome)
 ```
