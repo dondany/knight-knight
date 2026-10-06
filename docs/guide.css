@@ -107,3 +107,25 @@ tr:hover td{background:rgba(32,46,55,.45)}
 
 footer{margin-top:40px;padding:22px 0 40px;border-top:2px solid var(--line);color:var(--mute);font-size:14px}
 @media (max-width:560px){h2{font-size:38px}.army h3{font-size:34px}.units,.items{grid-template-columns:1fr}}
+
+/* art-refs.html: one drawing brief per proposed unit, text on the left and pictures on the right */
+.strip{display:flex;flex-wrap:wrap;gap:2px;align-items:center;margin:0 0 12px}
+.strip .tag{margin-right:10px}
+.refs{display:grid;gap:12px;margin-bottom:14px}
+.ref{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:12px 24px;background:var(--panel);padding:14px 16px}
+.ref h4{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:30px}
+.ref p{margin:10px 0 0;font-size:15px;line-height:1.45}
+.ref p b{display:block;font:400 18px/1.1 var(--px);color:var(--mute);text-transform:uppercase;letter-spacing:.5px}
+.sw{display:flex;gap:4px;margin:14px 0 0;padding:0;list-style:none;max-width:340px}
+.sw li{flex:1;margin:0;min-width:0;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:var(--mute);text-align:center}
+.sw i{display:block;height:22px;margin-bottom:3px;background:var(--c);box-shadow:0 0 0 1px var(--bg)}
+.sw.all{display:grid;grid-template-columns:repeat(6,1fr);gap:6px 4px;margin:0 0 14px;max-width:760px}
+.pics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-content:start}
+.pics figure{margin:0;min-width:0}
+.pics a{display:block;aspect-ratio:1;background:var(--panel2)}
+.pics img{display:block;width:100%;height:100%;object-fit:contain}
+.pics figcaption{margin-top:5px;font-size:12.5px;line-height:1.3;color:var(--soft)}
+.ref .more{font-size:13px;color:var(--mute)}
+.cred{font-size:13px}
+.cred td:first-child{word-break:break-word;min-width:220px}
+@media (max-width:760px){.ref{grid-template-columns:1fr}}

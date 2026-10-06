@@ -17,7 +17,10 @@ Ships as one static page for GitHub Pages.
 - `docs/index.html` – the public field guide (GitHub Pages: `/knight-knight/docs/`). **Generated** by
   `tools/guide.py` from the game data; edit `tools/guide.js`, never the page.
 - `docs/ideas.html` – hand-written proposals: extra units, new armies, ideas from other auto-battlers.
-  `docs/guide.css` styles both pages.
+- `docs/art-refs.html` – hand-maintained drawing briefs for the units proposed in `ideas.html`: what
+  each looked like, what must read at 16px, palette swatches, and reference pictures hot-linked from
+  Wikimedia Commons (credited at the foot of the page). Also states the sprite rules the code imposes.
+  `docs/guide.css` styles all three pages.
 
 Read the doc that matches the task instead of re-deriving it from `index.html`.
 

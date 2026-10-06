@@ -48,7 +48,8 @@ it by hand, so the things that only show up in motion are unverified:
 
 Worked-out proposals live in `docs/ideas.html`: three more units for every army (fixes the thin
 story start), five new armies with a land each, and a table of ideas from other auto-battlers with
-the best fits marked. The short list below is the rest.
+the best fits marked. None of the 46 proposed units has a sprite yet; `docs/art-refs.html` has a
+drawing brief and reference pictures for each. The short list below is the rest.
 
 - Campaign depth: persistent veterans, a relic per conquered land, optional side battles, a final
   boss fielding every army.
