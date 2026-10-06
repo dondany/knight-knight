@@ -77,7 +77,9 @@ the army are not cards: they stand on slabs exactly as they do in battle.
 - `drawCard(o)` paints the face flat on a scratch canvas (`CARDC`) and blits it with the card's
   tilt and squash, so a rotated card keeps hard pixels. Frame colour is the army colour, the art
   window is `cardBg(army)` (that army's battlefield colours from `THEMES`), the corner coin is the
-  price, the tally under the name is the tier, and the stat badges are the battlefield ones.
+  price, and on a unit the tally under the name is the tier and the stat badges are the
+  battlefield ones. An item card has no stats or tally: it shows the item's `short` effect and
+  whether it is gear or a supply.
 - Name and ability are DOM text: `cardLabels(list)` keeps one `.cd` element per card in `#hand`
   and re-places it every frame with the same offset, tilt, scale and alpha as the canvas card.
 - A dragged card stays a card while the pointer is over the hand (`drag.card`) and turns into the
@@ -214,7 +216,8 @@ call in the LOGIC region. `col,row` is the sheet cell; `pos` is a bot placement 
 
 **Add an item.** An entry in `ITEMS` (`gear:true` for persistent gear, `noTarget:true` if it
 needs no unit), its effect in `useItem` or in the simulator (`hit`, `strike`, `resolve`), a 10×10
-icon in `ART`, and for gear a 5×5 `g_<key>` marker.
+icon in `ART`, and for gear a 5×5 `g_<key>` marker. Give it a `short` of about a dozen
+characters for the shop card.
 
 **Add an army.** An entry in `FACTIONS`, its key in `REAL_F`, names in `ARMY_NAMES`, and the bonus
 itself wherever it applies (`startTurn`/`endTurn` for shop effects, `sl(u, f)` checks in the

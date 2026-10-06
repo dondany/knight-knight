@@ -86,7 +86,10 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
 .cd{position:absolute;width:calc(var(--u)*28);text-align:center;line-height:1;white-space:nowrap;overflow:hidden;color:#241527;transform-origin:calc(var(--u)*14) calc(var(--u)*-2)}
 .cd b{display:block;font-weight:400;font-size:calc(var(--u)*5.4)}
 .cd.lg b{font-size:calc(var(--u)*4.6);line-height:1.17}
-.cd i{display:block;font-style:normal;font-size:calc(var(--u)*4.2);color:#7a4841}
+.cd i,.cd u{display:block;font-style:normal;text-decoration:none;font-size:calc(var(--u)*4.2);color:#7a4841}
+.cd.it i{font-size:calc(var(--u)*4.7);color:#25562e}
+.cd.it u{margin-top:calc(var(--u)*1.6)}
+.cd u:empty{display:none}
 #shopbar{left:0;right:0;top:calc(var(--u)*162);height:calc(var(--u)*14)}
 #shopbar>*{position:absolute;top:0}
 #btnRoll{left:calc(var(--u)*24)}
@@ -366,14 +369,15 @@ def('barbarian','Barbarian','merc',4,5,5, 0,6, 0,'Frenzy','Wild. After attack: g
 
 const UNIT_KEYS = Object.keys(UNITS);
 
+// `short` is the few words that fit on the item's shop card; `text` is the full rule.
 const ITEMS = {
-  ration:   {name:'Ration',      tier:1, text:'Give a unit +1/+1.'},
-  whetstone:{name:'Whetstone',   tier:2, gear:true, text:'Gear: attacks deal +3 damage.'},
-  chainmail:{name:'Chainmail',   tier:3, gear:true, text:'Gear: take 2 less damage (min 1).'},
-  feast:    {name:'Feast',       tier:4, noTarget:true, text:'Give 3 random units +1/+1.'},
-  manual:   {name:'War Manual',  tier:4, text:'Give a unit +1 experience.'},
-  shield:   {name:'Tower Shield',tier:5, gear:true, text:'Gear: block the first hit each battle.'},
-  ankh:     {name:'Ankh',        tier:6, gear:true, text:'Gear: once per battle, return from death as a 1/1.'},
+  ration:   {name:'Ration',      tier:1, short:'+1/+1', text:'Give a unit +1/+1.'},
+  whetstone:{name:'Whetstone',   tier:2, gear:true, short:'+3 damage', text:'Gear: attacks deal +3 damage.'},
+  chainmail:{name:'Chainmail',   tier:3, gear:true, short:'Take 2 less', text:'Gear: take 2 less damage (min 1).'},
+  feast:    {name:'Feast',       tier:4, noTarget:true, short:'3 units +1/+1', text:'Give 3 random units +1/+1.'},
+  manual:   {name:'War Manual',  tier:4, short:'+1 XP', text:'Give a unit +1 experience.'},
+  shield:   {name:'Tower Shield',tier:5, gear:true, short:'Block 1 hit', text:'Gear: block the first hit each battle.'},
+  ankh:     {name:'Ankh',        tier:6, gear:true, short:'Revive as 1/1', text:'Gear: once per battle, return from death as a 1/1.'},
 };
 const ITEM_KEYS = Object.keys(ITEMS);
 
@@ -993,8 +997,8 @@ function drawCard(o){
   R(1,1,32,44,col); R(1,1,32,1,'rgba(235,237,233,.4)'); R(1,44,32,1,'rgba(9,10,20,.3)'); R(32,2,1,42,'rgba(9,10,20,.15)');
   R(2,2,30,42,'#090a14'); cg.drawImage(cardBg(u?d.faction:'item'),5,5);
   R(3,24,28,19,'#e7d5b3'); R(3,24,28,1,'#ebede9'); R(3,41,28,2,'#d7b594');
-  for(let i=0;i<d.tier;i++) R(18-d.tier+i*2,37,1,4,'#ad7757');
   if(u){
+    for(let i=0;i<d.tier;i++) R(18-d.tier+i*2,37,1,4,'#ad7757');
     const s=SPR[u.key], bob=((G.time+u.uid*137)/460|0)%2;
     if(s){ cg.drawImage(s.n,0,0,18,11,10,7+bob,18,11); cg.drawImage(s.n,0,11,18,7,10,18,18,7); }
     badge(4,38,u.atk,'#577277',false,cg); badge(34,38,u.hp,'#a53030',true,cg);
@@ -1013,14 +1017,14 @@ function drawCard(o){
   g.drawImage(CARDC,-CARD_W/2-2,-CARD_H/2-2);
   g.restore(); g.globalAlpha=1;
 }
-// Card names are DOM text riding on the canvas cards; renderShop places one label per card every frame.
+// Card text (name, then ability; for items name, effect and kind) is DOM riding on the canvas cards; renderShop places one label per card every frame.
 const CDL=[];
 function cardLabels(list){
-  while(CDL.length<list.length){ const d=document.createElement('div'); d.className='cd'; d.innerHTML='<b></b><i></i>'; $('hand').appendChild(d); CDL.push({d,key:'',css:''}); }
+  while(CDL.length<list.length){ const d=document.createElement('div'); d.className='cd'; d.innerHTML='<b></b><i></i><u></u>'; $('hand').appendChild(d); CDL.push({d,key:'',css:''}); }
   CDL.forEach((c,n)=>{
     const o=list[n]; if(!o){ if(c.css!=='-'){ c.css='-'; c.d.style.cssText='display:none'; } return; }
     const u=o.e.u, d=u?UNITS[u.key]:ITEMS[o.e.item], key=d.name;
-    if(c.key!==key){ c.key=key; c.d.firstChild.textContent=d.name; c.d.lastChild.textContent=u?d.ability:d.gear?'Gear':'Supply'; c.d.classList.toggle('lg',d.name.length>11); }
+    if(c.key!==key){ c.key=key; c.d.children[0].textContent=d.name; c.d.children[1].textContent=u?d.ability:d.short; c.d.children[2].textContent=u?'':d.gear?'Gear':'Supply'; c.d.className='cd'+(d.name.length>11?' lg':'')+(u?'':' it'); }
     const al=(o.alpha==null?1:Math.max(0,Math.min(1,o.alpha)))*(o.dim?.6:1);
     const css=`left:calc(var(--u)*${Math.round(o.x)-14});top:calc(var(--u)*${Math.round(o.y)+2});opacity:${al.toFixed(2)};transform:rotate(${(o.rot||0).toFixed(3)}rad) scale(${(o.sx||1).toFixed(3)},${(o.sy||1).toFixed(3)})`;
     if(c.css!==css){ c.css=css; c.d.style.cssText=css; }
