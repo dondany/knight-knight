@@ -25,12 +25,15 @@ it by hand, so the things that only show up in motion are unverified:
   nothing but Peasants. It works (and merges come fast) but the first expedition has little choice.
 - **Each expedition starts from scratch.** The only things carried between regions are the armies
   and +1 starting gold per land. A persistent army, relics or upgrades could give more of a campaign.
-- **Region difficulty is uneven** by the bot's measure: Thebes is easier than its danger rating,
-  Samarkand is the hardest, and champions are beaten 30–50% of the time. Tuning is very sensitive
-  to the rival's gold (one gold can swing a region from 25% to 90%).
-- **Mercenaries.** One mercenary plus four different armies turns on four tier-1 bonuses.
-- **Skirmish balance.** Romans sit a few points above the other armies in bot-vs-bot win rate;
-  Medieval and Japanese sit lowest. Draws are about 14% of battles and cost nothing.
+- **Region difficulty** now falls with the danger rating by the bot's measure, but tuning is very
+  sensitive: one rival gold can swing a region from 25% to 90%, and any buff to a tier-1 unit
+  brings the champion a turn earlier. Thebes and Sparta sit on the edge of their bands.
+- **Mercenaries are weak for the bot.** Since they stopped switching bonuses on alone, bot teams
+  holding one win 38% and lose 54% against teams without (they were 53/39 before, which was the
+  exploit). The gap opens from turn 7. The bot still values them like favoured-army units, and
+  Sellsword's ability never fires for it because it never leaves 2 gold unspent.
+- **Skirmish balance.** The armies are within 1.6 points of each other on a large sweep. Draws are
+  about 12% of battles and cost nothing.
 - **Late skirmish.** Bot armies plateau around tier 4 and level 1.7 by turn 14.
 - **Unit names and abilities** were assigned by looking at each sprite. Some are guesses.
 - **The world map** is a rough hand-drawn polygon set. Sparta and Rome sit close together.
@@ -39,12 +42,15 @@ it by hand, so the things that only show up in motion are unverified:
 
 ## Ideas
 
+Worked-out proposals live in `docs/ideas.html`: three more units for every army (fixes the thin
+story start), five new armies with a land each, and a table of ideas from other auto-battlers with
+the best fits marked. The short list below is the rest.
+
 - Campaign depth: persistent veterans, a relic per conquered land, optional side battles, a final
   boss fielding every army.
 - Region modifiers (snow slows the first attack, desert drains health, and so on).
 - Attack and walk animation frames, if the sprite sheet grows.
 - A battle log or step-by-step replay.
-- A collection screen listing every unit, ability and army bonus.
 - Daily seed or shareable run code (the simulator is already deterministic per seed).
 - Real opponents: store finished armies per turn and fight other players' saved line-ups.
 - More armies and regions; rows can simply be added to the sheet.

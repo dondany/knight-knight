@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Knight Knight · Ideas</title>
+<meta name="description" content="Proposed armies, new units and ideas borrowed from other auto-battlers for Knight Knight. None of it is in the game yet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+<nav class="top"><div class="wrap"><a class="brand" href="index.html">Field Guide</a><a href="#why">Why</a><a href="#units">More units</a><a href="#armies">New armies</a><a href="#cost">Cost and order</a><a href="#borrowed">Borrowed ideas</a><a class="here" href="ideas.html">Ideas</a><a class="play" href="../">Play ▸</a></div></nav>
+<header class="hero" id="top"><div class="wrap">
+<h1>IDEAS</h1>
+<p>Proposals only. <b>Nothing on this page is in the game yet.</b> What exists today is in the <a href="index.html">field guide</a>. Stats and ability values here are starting points to be tuned with the simulator, not final numbers.</p>
+<ul class="facts"><li><b>21</b>new units for today's armies</li><li><b>5</b>new armies, 25 units</li><li><b>17</b>ideas from other auto-battlers</li></ul>
+</div></header>
+<main class="wrap">
+
+<section id="why">
+<h2>Why more content</h2>
+<div class="cols">
+<div class="box"><h3>The story starts thin</h3><p>Story begins with the Medieval army alone: five units, and the first turn offers nothing but Peasants. A second tier-1 unit per army, plus cheap mercenaries for hire from the start, gives turn 1 three different recruits instead of one.</p></div>
+<div class="box"><h3>Armies skip tiers</h3><p>Every army has five units and each one is missing a tier, so some shop tiers add nothing for a single-army player. Three more units per army closes every gap from tier 1 to tier 6.</p></div>
+<div class="box"><h3>More lands to conquer</h3><p>Six lands is a short campaign. Each new army below comes with a land, a champion and a bonus that plays unlike the existing six.</p></div>
+</div>
+</section>
+
+<section id="units">
+<h2>Three more units per army</h2>
+<p class="lead">Each army gets a second tier-1 unit, a mid-tier unit, and whatever tier it is missing. Mercenaries grow from two units to a full line of five. "Needs" says whether the ability works with the triggers the simulator already has.</p>
+<div class="scroll"><table>
+<tr><th>Army</th><th>Unit</th><th class="n">Tier</th><th class="n">ATK/HP</th><th>Ability</th><th>Effect at level 1 / 2 / 3</th><th>Needs</th></tr>
+
+<tr><td class="k" style="color:#4f8fba" rowspan="3">Medieval</td><td><b>Squire</b></td><td class="n">1</td><td class="n">1/3</td><td><em>Sworn Shield</em></td><td>Start of battle: give the friend ahead <b class="lv">+1/+1<i>/</i>+2/+2<i>/</i>+3/+3</b>.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Merchant</b></td><td class="n">2</td><td class="n">1/3</td><td><em>Haggle</em></td><td>Your first <b class="lv">1<i>/</i>2<i>/</i>3</b> rerolls each turn are free.</td><td><span class="tag m">new shop trigger: reroll</span></td></tr>
+<tr><td><b>Trebuchet</b></td><td class="n">5</td><td class="n">2/7</td><td><em>Siege</em></td><td>Start of battle: deal <b class="lv">6<i>/</i>12<i>/</i>18</b> damage to the enemy with the most health.</td><td><span class="tag s">existing triggers</span></td></tr>
+
+<tr><td class="k" style="color:#75a743" rowspan="3">Vikings</td><td><b>Shield Maiden</b></td><td class="n">1</td><td class="n">1/3</td><td><em>Shield Wall</em></td><td>Faint: the friend behind blocks its next <b class="lv">hit<i>/</i>2 hits<i>/</i>3 hits</b>.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Völva</b></td><td class="n">3</td><td class="n">2/4</td><td><em>Doom</em></td><td>Friend faints: deal <b class="lv">2<i>/</i>4<i>/</i>6</b> damage to a random enemy.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Valkyrie</b></td><td class="n">6</td><td class="n">5/6</td><td><em>Valhalla</em></td><td>The first <b class="lv">1<i>/</i>2<i>/</i>3</b> friends to faint each battle return with 1 health and their full attack.</td><td><span class="tag m">summon that keeps the ability</span></td></tr>
+
+<tr><td class="k" style="color:#cf573c" rowspan="3">Spartans</td><td><b>Helot</b></td><td class="n">1</td><td class="n">1/3</td><td><em>Shield Bearer</em></td><td>Start of battle: give the friend ahead <b class="lv">+2<i>/</i>+4<i>/</i>+6</b> health.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Myrmidon</b></td><td class="n">3</td><td class="n">4/3</td><td><em>Riposte</em></td><td>Hurt: deal <b class="lv">2<i>/</i>4<i>/</i>6</b> damage to the front enemy.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Strategos</b></td><td class="n">5</td><td class="n">4/8</td><td><em>Guard</em></td><td>The first <b class="lv">2<i>/</i>4<i>/</i>6</b> enemy ability hits aimed at a friend each battle strike this unit instead.</td><td><span class="tag m">new: redirect ability damage</span></td></tr>
+
+<tr><td class="k" style="color:#e8c170" rowspan="3">Egyptians</td><td><b>Acolyte</b></td><td class="n">1</td><td class="n">1/2</td><td><em>Offering</em></td><td>Faint: give the friend behind <b class="lv">+1/+2<i>/</i>+2/+4<i>/</i>+3/+6</b>.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Anubis Guard</b></td><td class="n">3</td><td class="n">3/4</td><td><em>Weigh the Heart</em></td><td>Knockout: raise the fallen enemy as a <b class="lv">2/2<i>/</i>4/4<i>/</i>6/6</b> Mummy on your side.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Embalmer</b></td><td class="n">4</td><td class="n">2/6</td><td><em>Canopic Rite</em></td><td>Your Mummies rise with <b class="lv">+2/+2<i>/</i>+4/+4<i>/</i>+6/+6</b>.</td><td><span class="tag m">small change to summons</span></td></tr>
+
+<tr><td class="k" style="color:#c65197" rowspan="3">Romans</td><td><b>Tiro</b></td><td class="n">1</td><td class="n">1/2</td><td><em>Training</em></td><td>End of turn: gain <b class="lv">+0/+1<i>/</i>+1/+1<i>/</i>+1/+2</b> for good.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Triarius</b></td><td class="n">3</td><td class="n">3/5</td><td><em>Last Line</em></td><td>When it is your last unit standing: gain <b class="lv">+4/+4<i>/</i>+8/+8<i>/</i>+12/+12</b>.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Legate</b></td><td class="n">6</td><td class="n">5/8</td><td><em>Triumph</em></td><td>End of turn: if you won your last battle, <b class="lv">1 random friend<i>/</i>2 random friends<i>/</i>every friend</b> gains +1/+1 for good.</td><td><span class="tag m">remember the last result</span></td></tr>
+
+<tr><td class="k" style="color:#df84a5" rowspan="3">Japanese</td><td><b>Bannerman</b></td><td class="n">1</td><td class="n">1/3</td><td><em>War Banner</em></td><td>Start of battle: give the friend ahead <b class="lv">+2<i>/</i>+4<i>/</i>+6</b> attack.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Shinobi</b></td><td class="n">2</td><td class="n">2/2</td><td><em>Ambush</em></td><td>Start of battle: swap the enemy's front and rearmost units and deal <b class="lv">1<i>/</i>3<i>/</i>5</b> damage to both.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Shogun</b></td><td class="n">6</td><td class="n">6/7</td><td><em>Bakufu</em></td><td>The Bushido bonus also applies to each Japanese friend's <b class="lv">2nd attack<i>/</i>2nd and 3rd<i>/</i>every attack</b>.</td><td><span class="tag m">small change to attacks</span></td></tr>
+
+<tr><td class="k" style="color:#a8b5b2" rowspan="3">Mercenaries</td><td><b>Camp Follower</b></td><td class="n">1</td><td class="n">1/2</td><td><em>Odd Jobs</em></td><td>Wild. End of turn: give the friend ahead <b class="lv">+1<i>/</i>+2<i>/</i>+3</b> health for good.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Hired Crossbow</b></td><td class="n">2</td><td class="n">3/2</td><td><em>Contract</em></td><td>Wild. Start of battle: deal <b class="lv">3<i>/</i>6<i>/</i>9</b> damage to the enemy with the highest attack.</td><td><span class="tag s">existing triggers</span></td></tr>
+<tr><td><b>Condottiere</b></td><td class="n">5</td><td class="n">4/5</td><td><em>Free Company</em></td><td>Wild. Start of battle: gain <b class="lv">+1/+1<i>/</i>+2/+2<i>/</i>+3/+3</b> for each different army on your team.</td><td><span class="tag s">existing triggers</span></td></tr>
+</table></div>
+
+<h3>What this changes</h3>
+<div class="scroll"><table>
+<tr><th>Army</th><th>Tiers today</th><th>Tiers after</th><th>Role of the new units</th></tr>
+<tr><td class="k" style="color:#4f8fba">Medieval</td><td>1, 2, 3, 4, 6</td><td>1, 1, 2, 2, 3, 4, 5, 6</td><td>A second opener, an economy unit that fits Tithe, and a tank-killer for tier 5.</td></tr>
+<tr><td class="k" style="color:#75a743">Vikings</td><td>1, 2, 3, 4, 5</td><td>1, 1, 2, 3, 3, 4, 5, 6</td><td>More ways to profit from deaths, and a capstone that makes each friend die twice.</td></tr>
+<tr><td class="k" style="color:#cf573c">Spartans</td><td>1, 2, 3, 4, 6</td><td>1, 1, 2, 3, 3, 4, 5, 6</td><td>Punishes attackers, and gives the game its first answer to back-line snipers.</td></tr>
+<tr><td class="k" style="color:#e8c170">Egyptians</td><td>1, 2, 3, 5, 6</td><td>1, 1, 2, 3, 3, 4, 5, 6</td><td>Mummies become a build of their own rather than a consolation prize.</td></tr>
+<tr><td class="k" style="color:#c65197">Romans</td><td>1, 2, 3, 4, 5</td><td>1, 1, 2, 3, 3, 4, 5, 6</td><td>Slow permanent growth from turn 1, and a reward for winning streaks.</td></tr>
+<tr><td class="k" style="color:#df84a5">Japanese</td><td>1, 2, 3, 4, 5</td><td>1, 1, 2, 2, 3, 4, 5, 6</td><td>Enemy line disruption, and a capstone that keeps Bushido going past the first hit.</td></tr>
+<tr><td class="k" style="color:#a8b5b2">Mercenaries</td><td>3, 4</td><td>1, 2, 3, 4, 5</td><td>A real army for Samarkand, and cheap hires that could be on offer in every story expedition.</td></tr>
+</table></div>
+<p><b>Story start with these in:</b> turn 1 offers Peasant, Squire and Camp Follower instead of only Peasant, and turn 2 adds Longbowman, Merchant and Hired Crossbow. That assumes tier 1 and 2 mercenaries can be hired everywhere from the start, with Samarkand unlocking the rest.</p>
+<p>Two champions would also stop borrowing a lesser unit: Kyoto's Shogun becomes the real Shogun, and Samarkand's Warlord could be the Condottiere.</p>
+</section>
+
+<section id="armies">
+<h2>Five new armies</h2>
+<p class="lead">Chosen so that each bonus does something none of the current six do, and so that each land has an obvious place on the map.</p>
+
+<div class="army" id="persians" style="--c:#a23e8c"><header><h3>Persians</h3><span class="home">Persepolis · champion: Xerxes · between Thebes and Samarkand</span></header>
+<dl class="bonus"><div class="name">Army bonus: Arrow Storm<small>works in battle</small></div><dt>2 units</dt><dd>Start of battle: deal 1 damage to every enemy.</dd><dt>4 units</dt><dd>Start of battle: deal 3 damage to every enemy.</dd></dl>
+<p><b>How it plays.</b> Chip damage across the whole enemy line before the first clash. It strips blocks from Knights and Tower Shields, kills fragile openers and softens everything else. It is weak into Spartans, whose Phalanx shrugs most of it off, which is the right history.</p>
+<div class="scroll"><table>
+<tr><th>Unit</th><th class="n">Tier</th><th class="n">ATK/HP</th><th>Ability</th><th>Effect at level 1 / 2 / 3</th></tr>
+<tr><td><b>Sparabara</b></td><td class="n">1</td><td class="n">1/3</td><td><em>Wicker Wall</em></td><td>Start of battle: the friend behind blocks its first <b class="lv">hit<i>/</i>2 hits<i>/</i>3 hits</b>.</td></tr>
+<tr><td><b>Kamandar</b></td><td class="n">2</td><td class="n">2/2</td><td><em>Loose</em></td><td>Start of battle: deal 1 damage to every enemy, <b class="lv">once<i>/</i>twice<i>/</i>3 times</b>.</td></tr>
+<tr><td><b>Immortal</b></td><td class="n">3</td><td class="n">3/4</td><td><em>Ten Thousand</em></td><td>The first time it faints, it returns at the back of the line with <b class="lv">2<i>/</i>4<i>/</i>6</b> health and its full attack.</td></tr>
+<tr><td><b>Scythed Chariot</b></td><td class="n">4</td><td class="n">5/3</td><td><em>Scythes</em></td><td>Its first attack also deals <b class="lv">3<i>/</i>6<i>/</i>9</b> damage to every other enemy.</td></tr>
+<tr><td><b>Xerxes</b></td><td class="n">6</td><td class="n">4/9</td><td><em>King of Kings</em></td><td>Enemies take <b class="lv">+1<i>/</i>+2<i>/</i>+3</b> damage from your abilities.</td></tr>
+</table></div>
+<p class="note"><span class="tag s">bonus uses existing code</span> <span class="tag m">Immortal and Xerxes need small simulator changes</span> Battlefield: palace columns on a golden plain.</p></div>
+
+<div class="army" id="carthaginians" style="--c:#da863e"><header><h3>Carthaginians</h3><span class="home">Carthage · champion: Hannibal · a sea lane south from Rome</span></header>
+<dl class="bonus"><div class="name">Army bonus: Trample<small>works in battle</small></div><dt>2 units</dt><dd>When a Carthaginian fells the enemy front with its attack, half the leftover damage carries on to the next enemy.</dd><dt>4 units</dt><dd>All of the leftover damage carries on.</dd></dl>
+<p><b>How it plays.</b> Big hitters that punch through weak units instead of wasting a swing on them. It is the natural answer to Mummies, tokens and tier-1 fodder, and it is poor against blocks, which waste the whole hit.</p>
+<div class="scroll"><table>
+<tr><th>Unit</th><th class="n">Tier</th><th class="n">ATK/HP</th><th>Ability</th><th>Effect at level 1 / 2 / 3</th></tr>
+<tr><td><b>Numidian Rider</b></td><td class="n">1</td><td class="n">2/1</td><td><em>Harass</em></td><td>Start of battle: deal <b class="lv">1<i>/</i>2<i>/</i>3</b> damage to the front enemy.</td></tr>
+<tr><td><b>Balearic Slinger</b></td><td class="n">2</td><td class="n">1/3</td><td><em>Lead Shot</em></td><td>Start of battle: the front <b class="lv">enemy loses<i>/</i>2 enemies lose<i>/</i>3 enemies lose</b> all blocks and damage reduction.</td></tr>
+<tr><td><b>Sacred Band</b></td><td class="n">3</td><td class="n">3/5</td><td><em>Oath</em></td><td>Hurt: give the friend behind <b class="lv">+1/+1<i>/</i>+2/+2<i>/</i>+3/+3</b>.</td></tr>
+<tr><td><b>War Elephant</b></td><td class="n">5</td><td class="n">6/7</td><td><em>Stampede</em></td><td>Its attacks always trample in full, and the damage carried over is increased by <b class="lv">0<i>/</i>3<i>/</i>6</b>.</td></tr>
+<tr><td><b>Hannibal</b></td><td class="n">6</td><td class="n">5/7</td><td><em>Over the Alps</em></td><td>Start of battle: summon a <b class="lv">4/4<i>/</i>6/6<i>/</i>8/8</b> War Elephant at the front of your line.</td></tr>
+</table></div>
+<p class="note"><span class="tag m">trample is a change to the attack exchange</span> <span class="tag m">Lead Shot needs a new "strip" effect</span> Battlefield: a harbour with palms and war galleys.</p></div>
+
+<div class="army" id="han" style="--c:#a4dddb"><header><h3>Han</h3><span class="home">Chang'an · champion: The Emperor · on the road between Samarkand and Kyoto</span></header>
+<dl class="bonus"><div class="name">Army bonus: Art of War<small>works in battle</small></div><dt>2 units</dt><dd>Han start-of-battle abilities fire before everyone else's.</dd><dt>4 units</dt><dd>And they fire twice.</dd></dl>
+<p><b>How it plays.</b> Every unit has a start-of-battle ability, so the army tries to win the fight before the first clash. It fades in long battles and hates anything that survives the opening.</p>
+<div class="scroll"><table>
+<tr><th>Unit</th><th class="n">Tier</th><th class="n">ATK/HP</th><th>Ability</th><th>Effect at level 1 / 2 / 3</th></tr>
+<tr><td><b>Conscript</b></td><td class="n">1</td><td class="n">2/2</td><td><em>War Drums</em></td><td>Start of battle: give a random friend <b class="lv">+1/+1<i>/</i>+2/+2<i>/</i>+3/+3</b>.</td></tr>
+<tr><td><b>Chu-ko-nu</b></td><td class="n">2</td><td class="n">2/2</td><td><em>Repeater</em></td><td>Start of battle: deal 1 damage to the front enemy <b class="lv">2<i>/</i>4<i>/</i>6</b> times.</td></tr>
+<tr><td><b>Fire Lancer</b></td><td class="n">3</td><td class="n">3/3</td><td><em>Black Powder</em></td><td>Start of battle: deal <b class="lv">2<i>/</i>4<i>/</i>6</b> damage to the front enemy and the one behind it.</td></tr>
+<tr><td><b>Strategist</b></td><td class="n">4</td><td class="n">2/5</td><td><em>Stratagem</em></td><td>Start of battle: pull the strongest enemy to the front. It loses <b class="lv">0<i>/</i>2<i>/</i>4</b> attack.</td></tr>
+<tr><td><b>Emperor</b></td><td class="n">6</td><td class="n">4/8</td><td><em>Mandate of Heaven</em></td><td>Start of battle: repeat the start-of-battle ability of the friend ahead, at level <b class="lv">1<i>/</i>2<i>/</i>3</b>.</td></tr>
+</table></div>
+<p class="note"><span class="tag m">bonus changes the start-of-battle order</span> <span class="tag s">units use existing triggers</span> Battlefield: the Great Wall along a ridge, misty peaks behind.</p></div>
+
+<div class="army" id="mongols" style="--c:#ad7757"><header><h3>Mongols</h3><span class="home">Karakorum · champion: The Great Khan · north of the Norse–Samarkand road</span></header>
+<dl class="bonus"><div class="name">Army bonus: Feigned Retreat<small>works in battle</small></div><dt>2 units</dt><dd>After a Mongol's first attack, it rides to the back of the line.</dd><dt>4 units</dt><dd>And it gains +2/+2 as it goes.</dd></dl>
+<p><b>How it plays.</b> The front line rotates. Damage is spread across the army, every unit gets its opening strike, and abilities that care about position fire again and again. It is the only army where the order of your line changes during the fight.</p>
+<div class="scroll"><table>
+<tr><th>Unit</th><th class="n">Tier</th><th class="n">ATK/HP</th><th>Ability</th><th>Effect at level 1 / 2 / 3</th></tr>
+<tr><td><b>Horse Archer</b></td><td class="n">1</td><td class="n">2/1</td><td><em>Parthian Shot</em></td><td>After attack: deal <b class="lv">1<i>/</i>2<i>/</i>3</b> damage to the rearmost enemy.</td></tr>
+<tr><td><b>Lancer</b></td><td class="n">2</td><td class="n">3/2</td><td><em>Charge</em></td><td>Its first attack deals <b class="lv">+2<i>/</i>+4<i>/</i>+6</b> damage.</td></tr>
+<tr><td><b>Keshig</b></td><td class="n">3</td><td class="n">3/5</td><td><em>Bodyguard</em></td><td>Start of battle: the rearmost friend blocks its first <b class="lv">hit<i>/</i>2 hits<i>/</i>3 hits</b>.</td></tr>
+<tr><td><b>Mangudai</b></td><td class="n">4</td><td class="n">4/4</td><td><em>Wheel About</em></td><td>Each time it returns to the front: gain <b class="lv">+2/+2<i>/</i>+4/+4<i>/</i>+6/+6</b>.</td></tr>
+<tr><td><b>Great Khan</b></td><td class="n">6</td><td class="n">6/7</td><td><em>Tumen</em></td><td>Whenever your line changes order, every friend gains <b class="lv">+1/+0<i>/</i>+1/+1<i>/</i>+2/+2</b>.</td></tr>
+</table></div>
+<p class="note"><span class="tag m">reordering your own line mid-battle</span> <span class="tag m">new trigger: returned to the front</span> Battlefield: open grassland under a huge sky. Samarkand would trade its yurts for a caravanserai.</p></div>
+
+<div class="army" id="aztecs" style="--c:#a8ca58"><header><h3>Aztecs</h3><span class="home">Tenochtitlan · champion: Moctezuma · across the western sea, by ship from Camelot</span></header>
+<dl class="bonus"><div class="name">Army bonus: Captives<small>works in battle and in the shop</small></div><dt>2 units</dt><dd>Each knockout by an Aztec gives you +1 gold next turn, up to 3.</dd><dt>4 units</dt><dd>And that Aztec gains +1/+1 for good.</dd></dl>
+<p><b>How it plays.</b> The only army where what happens in battle feeds the next shop. It snowballs when it is winning and starves when it is not, and it turns units from other armies with knockout abilities into earners.</p>
+<div class="scroll"><table>
+<tr><th>Unit</th><th class="n">Tier</th><th class="n">ATK/HP</th><th>Ability</th><th>Effect at level 1 / 2 / 3</th></tr>
+<tr><td><b>Macehual</b></td><td class="n">1</td><td class="n">2/2</td><td><em>Offering</em></td><td>Sell: give a random friend <b class="lv">+1/+1<i>/</i>+2/+2<i>/</i>+3/+3</b> for good.</td></tr>
+<tr><td><b>Otomi</b></td><td class="n">2</td><td class="n">3/2</td><td><em>Net</em></td><td>Knockout: the next enemy loses <b class="lv">2<i>/</i>4<i>/</i>6</b> attack.</td></tr>
+<tr><td><b>Eagle Warrior</b></td><td class="n">3</td><td class="n">3/4</td><td><em>Swoop</em></td><td>Start of battle: deal <b class="lv">3<i>/</i>6<i>/</i>9</b> damage to the weakest enemy.</td></tr>
+<tr><td><b>Jaguar Warrior</b></td><td class="n">4</td><td class="n">4/5</td><td><em>Take Captive</em></td><td>Knockout: heal to full and gain <b class="lv">+1<i>/</i>+2<i>/</i>+3</b> attack.</td></tr>
+<tr><td><b>High Priest</b></td><td class="n">5</td><td class="n">2/6</td><td><em>Sacrifice</em></td><td>Start of battle: your weakest other friend faints. Every other friend gains <b class="lv">+2/+2<i>/</i>+4/+4<i>/</i>+6/+6</b>.</td></tr>
+</table></div>
+<p class="note"><span class="tag l">battle results must report knockouts back to the shop</span> <span class="tag m">healing is new</span> Battlefield: a stepped pyramid over a lake, jungle at the edges. Needs a sea route on the map.</p></div>
+
+<h3>Also considered</h3>
+<ul>
+<li><b>Zulu</b>, "Horns of the Buffalo": your front and rearmost units are strengthened, rewarding a line with two anchors.</li>
+<li><b>Celts</b>, "Woad": stronger while outnumbered, an army that wants to field fewer, bigger units.</li>
+<li><b>Ottomans</b>, "Janissary Volley": the first clash of the battle is preceded by a gunpowder volley from every unit behind the front.</li>
+</ul>
+</section>
+
+<section id="cost">
+<h2>Cost and order</h2>
+<div class="cols">
+<div class="box"><h3>Art</h3><p>The 21 extra units need 21 new 16×16 sprites: about four more rows on the sheet. The five armies need 25 more, plus a battlefield and a map region each. Code for most units is one <code>def(...)</code> line.</p></div>
+<div class="box"><h3>A risk: the recruit pool</h3><p>Skirmish would go from 32 units to 53, then 78. Recruits are drawn evenly from everything unlocked, so copies get rarer and merging gets harder with every army added. More content should ship together with <a href="#borrowed">army packs or weighted shop odds</a>.</p></div>
+</div>
+<h3>Suggested order</h3>
+<ol class="steps">
+<li><b>Medieval and Mercenary units</b> (6 sprites). This alone fixes the thin story start.</li>
+<li><b>The other 15 units.</b> Every army covers every tier. Rebalance with the simulator.</li>
+<li><b>Persians and Carthaginians.</b> Both sit in the part of the map that already exists, and both bonuses are small simulator changes.</li>
+<li><b>Han and Mongols.</b> They fill the long empty road to Kyoto. Mongols need the most new battle code.</li>
+<li><b>Aztecs.</b> Last, because the bonus needs battles to report back to the shop and the map needs a sea route.</li>
+</ol>
+</section>
+
+<section id="borrowed">
+<h2>Ideas from other auto-battlers</h2>
+<p class="lead">What other games in the genre do, and how each idea could work here. Rows with a gold edge are the ones that fit best. Size is a rough guess: <span class="tag s">small</span> a day or less, <span class="tag m">medium</span> a few days, <span class="tag l">large</span> needs new systems.</p>
+<div class="scroll"><table>
+<tr><th>Idea</th><th>Seen in</th><th>How it could work here</th><th>What it fixes</th><th>Size</th></tr>
+
+<tr class="pick"><td class="k">Relics on conquest</td><td>Augments in Teamfight Tactics, trinkets and quests in Hearthstone Battlegrounds, relics in roguelike deckbuilders</td><td>After conquering a land, pick 1 of 3 relics tied to it. They last the whole campaign. Norse example: "Raven Banner: the first friend to faint each battle gives the others +1/+1."</td><td>Every expedition starts from scratch</td><td><span class="tag m">medium</span></td></tr>
+<tr class="pick"><td class="k">Army packs</td><td>Rotating unit sets in Teamfight Tactics, selectable packs in async team-builders</td><td>Before a Skirmish, choose (or roll) 4 armies. Only those appear in the shop, so copies show up often enough to merge.</td><td>Pool dilution as armies are added; replay variety</td><td><span class="tag s">small</span></td></tr>
+<tr class="pick"><td class="k">Weighted shop odds</td><td>Shop odds by level in Teamfight Tactics and Dota Underlords</td><td>Recruits favour the current tier instead of being drawn evenly, for example 40% from the newest tier.</td><td>Late skirmish plateau: bot armies sit around tier 4</td><td><span class="tag s">small</span></td></tr>
+<tr class="pick"><td class="k">Army codes and replays</td><td>Async battles against stored player line-ups in async team-builders, Backpack Battles and The Bazaar</td><td>Battles are deterministic, so an army plus a seed fits in a link. Share a line-up for a friend to fight, or share a replay. A list of player armies can live in the repo, so no server is needed.</td><td>Rivals are only ever a bot</td><td><span class="tag m">medium</span></td></tr>
+<tr class="pick"><td class="k">Scouting</td><td>Scouting in Teamfight Tactics, the visible enemy board in Mechabellum</td><td>Show the next rival's favoured army and, before a champion battle, the champion's ability, while you are still in the shop.</td><td>Line-up choices are made blind</td><td><span class="tag s">small</span></td></tr>
+
+<tr><td class="k">Commanders</td><td>Heroes in Hearthstone Battlegrounds and Storybook Brawl, legends in Teamfight Tactics</td><td>Pick a leader with a small shop power, such as one free reroll a turn. Beating a champion in Story unlocks that leader.</td><td>Runs with the same armies play the same</td><td><span class="tag m">medium</span></td></tr>
+<tr><td class="k">Veterans</td><td>Units and upgrades that persist between rounds in Mechabellum</td><td>After a conquest, keep one unit from the winning army. It starts your next expedition at level 1 in slot 1.</td><td>Every expedition starts from scratch</td><td><span class="tag s">small</span></td></tr>
+<tr><td class="k">Side stops on the map</td><td>Node maps in roguelike auto-battlers such as Despot's Game; monster rounds in Teamfight Tactics</td><td>Villages, shrines and mercenary camps on the roads between lands: a free recruit, a relic, an optional harder fight.</td><td>Campaign depth</td><td><span class="tag l">large</span></td></tr>
+<tr><td class="k">Region rules</td><td>Portals in Teamfight Tactics, anomalies in Hearthstone Battlegrounds</td><td>One rule twist per land. Snow: first attacks deal 2 less. Desert: the rearmost unit on each side loses 1 health a round.</td><td>Regions differ only by which army you face</td><td><span class="tag s">small</span> each</td></tr>
+<tr><td class="k">Paid shop tiers</td><td>Tavern tiers in Hearthstone Battlegrounds, levels in Teamfight Tactics</td><td>Spend gold to unlock the next unit tier a turn early instead of waiting for it.</td><td>Every turn's 10 gold is spent the same way</td><td><span class="tag m">medium</span></td></tr>
+<tr><td class="k">Streak and comeback gold</td><td>Win and loss streaks in Auto Chess, Dota Underlords, Teamfight Tactics</td><td>+1 gold after two wins in a row. +2 gold on the turn you drop to your last life.</td><td>Losing runs spiral; draws feel like nothing happened</td><td><span class="tag s">small</span></td></tr>
+<tr><td class="k">Prices by tier</td><td>Unit costs of 1 to 5 gold in the Auto Chess family</td><td>Tier 1–2 units cost 2, tier 3–4 cost 3, tier 5–6 cost 4.</td><td>A tier-1 and a tier-6 unit cost the same</td><td><span class="tag m">medium</span>, needs a rebalance</td></tr>
+<tr><td class="k">Item recipes</td><td>Item combining in Teamfight Tactics, recipes in Backpack Battles</td><td>A second piece of gear on a unit combines instead of replacing. Whetstone + Whetstone = Greatsword. Chainmail + Tower Shield = Bulwark.</td><td>Only 7 items</td><td><span class="tag m">medium</span></td></tr>
+<tr><td class="k">Lasting shop upgrades</td><td>Permanent shop buffs in async team-builders and Hearthstone Battlegrounds</td><td>A tier-5 supply, "Armoury": every recruit for the rest of the run arrives with +1/+1.</td><td>Late skirmish plateau</td><td><span class="tag s">small</span></td></tr>
+<tr><td class="k">Daily seed</td><td>Daily challenges across roguelikes</td><td>One fixed seed a day for shops and rivals, with the result shown as a shareable line.</td><td>Reasons to come back</td><td><span class="tag s">small</span></td></tr>
+<tr><td class="k">Ascension levels</td><td>Difficulty ladders in roguelike deckbuilders</td><td>After finishing the story, replay it with rivals that get +1 gold per level.</td><td>Nothing to do after the last land</td><td><span class="tag s">small</span></td></tr>
+<tr><td class="k">Survivor damage</td><td>Player damage by surviving units in Teamfight Tactics and Hearthstone Battlegrounds</td><td>Replace lives with a health bar; a loss costs more the more enemies are left standing.</td><td>A narrow loss and a rout cost the same</td><td><span class="tag m">medium</span>. Probably not worth it: 3 to 5 lives is easy to read</td></tr>
+</table></div>
+<h3>Looked at and left out</h3>
+<ul>
+<li><b>Grid positioning</b> (Teamfight Tactics, Dota Underlords, Mechabellum). The single line is what keeps a battle readable at 320×180.</li>
+<li><b>Shared drafts and carousels.</b> They need players online at the same time.</li>
+<li><b>Inventory puzzles</b> (Backpack Battles). A different game.</li>
+</ul>
+</section>
+
+</main>
+<footer><div class="wrap">Proposals for Knight Knight. See the <a href="index.html">field guide</a> for what is in the game today.</div></footer>
+</body>
+</html>

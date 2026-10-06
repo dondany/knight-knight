@@ -25,12 +25,12 @@ A region can be attacked once a road reaches it from conquered land.
 | Region | Army unlocked | Wins | Rival army size | Rival gold | Champion | Bonus | Roads to |
 |---|---|---|---|---|---|---|---|
 | Camelot (home) | Medieval | – | – | – | – | – | Norse Fjords, Rome |
-| Norse Fjords | Vikings | 3 | 4 | 6 | Jarl Ragnar (Jarl) | +1/+2 | Camelot, Samarkand |
-| Rome | Romans | 3 | 4 | 5 | Caesar | +1/+2 | Camelot, Sparta |
-| Sparta | Spartans | 4 | 4 | 6 | King Leonidas | none | Rome, Thebes, Samarkand |
-| Thebes | Egyptians | 4 | 5 | 8 | The Pharaoh | +2/+4 | Sparta, Samarkand |
-| Samarkand | Mercenaries | 5 | 5 | 9 | The Warlord (Barbarian) | +2/+4 | Norse Fjords, Sparta, Thebes, Kyoto |
-| Kyoto | Japanese | 5 | 5 | 8 | The Shogun (Samurai) | +1/+2 | Samarkand |
+| Norse Fjords | Vikings | 3 | 3 | 7 | Jarl Ragnar (Jarl) | +1/+2 | Camelot, Samarkand |
+| Rome | Romans | 3 | 3 | 7 | Caesar | +2/+4 | Camelot, Sparta |
+| Sparta | Spartans | 4 | 4 | 5 | King Leonidas | +2/+4 | Rome, Thebes, Samarkand |
+| Thebes | Egyptians | 4 | 4 | 8 | The Pharaoh | +1/+2 | Sparta, Samarkand |
+| Samarkand | Mercenaries | 5 | 4 | 9 | The Warlord (Barbarian) | +4/+8 | Norse Fjords, Sparta, Thebes, Kyoto |
+| Kyoto | Japanese | 5 | 5 | 8 | The Shogun (Samurai) | none | Samarkand |
 
 Samarkand's rivals draft from every army (favouring mercenaries), since two units do not make an
 army. Conquering all six ends the story.
@@ -76,13 +76,13 @@ A bonus switches on with 2 units of an army and improves with 4. Duplicates coun
 | Vikings | Blood Rage | When a Viking faints, the other Vikings gain +1/+1 | +2/+2 | Battle |
 | Spartans | Phalanx | Spartans take 1 less damage (min 1) | 2 less | Battle |
 | Egyptians | Afterlife | The first Egyptian to faint rises as a Mummy with half its attack and half its starting health | Every Egyptian rises once | Battle |
-| Romans | Drill | End of turn: a random Roman gains +1/+1 permanently | Every Roman does | Shop |
+| Romans | Drill | End of turn: a random Roman gains +1 health permanently | Every Roman does | Shop |
 | Japanese | Bushido | Each Japanese unit deals +2 damage with its first attack | +5 | Battle |
 
-**Mercenaries are wild.** Each one adds 1 to the count of every army that has at least one real
-member on the team, and receives those armies' bonuses itself. A team of only mercenaries has no
-bonus. Consequence worth knowing: four units from four different armies plus one mercenary turns
-on four tier-1 bonuses at once.
+**Mercenaries are wild.** Each one adds 1 to the count of every army that already has 2 real
+members on the team, and receives those armies' bonuses itself. So a mercenary pushes an active
+bonus toward its 4-unit tier but cannot switch a bonus on alone, and a team of only mercenaries
+has no bonus.
 
 Mummies are tokens: no ability, no army bonus, and they are never raised a second time.
 
@@ -92,8 +92,8 @@ Mummies are tokens: no ability, no army bonus, and they are never raised a secon
 
 | Army | Unit | Tier | ATK/HP | Ability | Effect (Lv1 / Lv2 / Lv3) | Sprite (col,row) | Key |
 |---|---|---|---|---|---|---|---|
-| Medieval | Peasant | 1 | 3/1 | Harvest | Sell: gain 1 / 2 / 3 extra gold. | 2,0 | `peasant` |
-| Medieval | Longbowman | 2 | 2/2 | Volley | Start of battle: deal 2 / 4 / 6 damage to the rearmost enemy. | 0,0 | `longbow` |
+| Medieval | Peasant | 1 | 3/2 | Harvest | Sell: gain 1 / 2 / 3 extra gold. | 2,0 | `peasant` |
+| Medieval | Longbowman | 2 | 2/3 | Volley | Start of battle: deal 2 / 4 / 6 damage to the rearmost enemy. | 0,0 | `longbow` |
 | Medieval | Knight | 3 | 3/4 | Plate Armor | Blocks the first hit / 2 hits / 3 hits it takes each battle. | 1,0 | `knight` |
 | Medieval | Halberdier | 4 | 4/5 | Reach | Before attack: deal 3 / 6 / 9 damage to the enemy behind the front. | 4,0 | `halberdier` |
 | Medieval | King | 6 | 5/7 | Royal Decree | Start of battle: give every other friend +2/+2 / +4/+4 / +6/+6. | 3,0 | `king` |
@@ -108,22 +108,22 @@ Mummies are tokens: no ability, no army bonus, and they are never raised a secon
 | Spartans | Lochagos | 4 | 3/5 | Hold the Line | Start of battle: give adjacent friends +1/+3 / +2/+6 / +3/+9. | 4,2 | `lochagos` |
 | Spartans | Leonidas | 6 | 7/7 | This is Sparta! | Start of battle: kick the front enemy to the back of their line for 5 / 10 / 15 damage. | 2,2 | `leonidas` |
 | Egyptians | Laborer | 1 | 1/3 | Tribute | Buy: give a random friend +1/+1 / +2/+2 / +3/+3. | 0,3 | `laborer` |
-| Egyptians | Medjay | 2 | 2/3 | Embalmed | Faint: rise as a 2/2 / 4/4 / 6/6 Mummy. | 3,3 | `medjay` |
+| Egyptians | Medjay | 2 | 3/3 | Embalmed | Faint: rise as a 3/3 / 6/6 / 9/9 Mummy. | 3,3 | `medjay` |
 | Egyptians | Priest of Set | 3 | 2/4 | Curse | Start of battle: the strongest enemy loses 3 / 6 / 9 attack (min 1). | 1,3 | `priest` |
-| Egyptians | Cleopatra | 5 | 4/5 | Asp | After attack: deal 4 / 8 / 12 damage to the weakest enemy. | 4,3 | `cleopatra` |
+| Egyptians | Cleopatra | 5 | 5/6 | Asp | After attack: deal 4 / 8 / 12 damage to the weakest enemy. | 4,3 | `cleopatra` |
 | Egyptians | Pharaoh | 6 | 4/8 | Eternal Kingdom | Friend faints: raise it as a 4/4 / 8/8 / 12/12 Mummy. | 2,3 | `pharaoh` |
 | Romans | Velite | 1 | 3/1 | Parting Shot | Faint: deal 2 / 4 / 6 damage to a random enemy. | 3,4 | `velite` |
-| Romans | Legionary | 2 | 2/3 | Formation | Start of battle: gain +1/+1 / +2/+2 / +3/+3 for each other Roman friend. | 0,4 | `legionary` |
-| Romans | Aquilifer | 3 | 2/4 | Eagle Standard | End of turn: give the friend ahead +1/+1 / +2/+2 / +3/+3 for good. | 2,4 | `aquilifer` |
+| Romans | Legionary | 2 | 2/2 | Formation | Start of battle: gain +1/+1 / +2/+2 / +3/+3 for each other Roman friend. | 0,4 | `legionary` |
+| Romans | Aquilifer | 3 | 2/4 | Eagle Standard | End of turn: give the friend ahead +1 / +2 / +3 attack for good. | 2,4 | `aquilifer` |
 | Romans | Centurion | 4 | 4/5 | Command | Before attack: give the friend behind +2/+1 / +4/+2 / +6/+3. | 1,4 | `centurion` |
 | Romans | Caesar | 5 | 5/5 | Veni, Vidi, Vici | Start of battle: deal 3 / 6 / 9 damage to the three front enemies. | 4,4 | `caesar` |
 | Japanese | Ashigaru | 1 | 2/2 | Vanguard | Start of battle: if in the front slot, gain +1/+2 / +2/+4 / +3/+6. | 3,5 | `ashigaru` |
-| Japanese | Ronin | 2 | 3/2 | Blood Price | Knockout: gain +2/+2 / +4/+4 / +6/+6. | 0,5 | `ronin` |
+| Japanese | Ronin | 2 | 3/3 | Blood Price | Knockout: gain +2/+2 / +4/+4 / +6/+6. | 0,5 | `ronin` |
 | Japanese | Yumi Archer | 3 | 1/3 | Arrow Rain | Friend ahead attacks: deal 2 / 4 / 6 damage to the rearmost enemy. | 2,5 | `yumi` |
 | Japanese | Sohei | 4 | 3/6 | Ward | Start of battle: the friend ahead blocks its / the 2 friends ahead block their / the 3 friends ahead block their first hit. | 4,5 | `sohei` |
 | Japanese | Samurai | 5 | 6/4 | Iaido | Strikes first: an enemy it fells cannot strike back. Attacks deal +0 / +3 / +6 damage. | 1,5 | `samurai` |
-| Mercenaries | Sellsword | 3 | 3/4 | Paid in Gold | Wild. End of turn: if you have 2+ unspent gold, gain +1/+1 / +2/+2 / +3/+3 for good. | 2,6 | `sellsword` |
-| Mercenaries | Barbarian | 4 | 4/4 | Frenzy | Wild. After attack: gain +2 / +4 / +6 attack. | 0,6 | `barbarian` |
+| Mercenaries | Sellsword | 3 | 3/5 | Paid in Gold | Wild. End of turn: if you have 2+ unspent gold, gain +1/+1 / +2/+2 / +3/+3 for good. | 2,6 | `sellsword` |
+| Mercenaries | Barbarian | 4 | 5/5 | Frenzy | Wild. After attack: gain +2 / +4 / +6 attack. | 0,6 | `barbarian` |
 
 Trigger vocabulary: *Start of battle* (resolved highest attack first), *Before attack* / *After
 attack* (the front unit), *Friend ahead attacks* (the second unit in line), *Hurt* (took damage
@@ -182,32 +182,36 @@ sun over Fuji with drifting petals (Japanese). Purely cosmetic.
 Bot against bot, from `tools/sim.py`. This says how the armies compare when played by the same
 simple bot. It says nothing about how hard the game is for a person, which has not been measured.
 
+This sweep is small (about 700 battles per army), so each rate is only good to about ±2 points.
+On an 84,000-battle sweep the armies sit within 1.6 points of each other: Medieval 43.0, Vikings
+45.5, Spartans 43.7, Egyptians 43.2, Romans 45.8, Japanese 43.7, with 11.7% draws.
+
 ```
-battles 2100  draws 13.7%  maxRounds 18  maxEvents 116
+battles 2100  draws 12.0%  maxRounds 19  maxEvents 126
 
 win rate by the bot's favoured army (bot vs bot):
-  medieval 39.3%
-  viking   45.6%
-  spartan  40.7%
-  egypt    44.1%
-  roman    48.7%
-  japan    39.9%
+  medieval 39.4%
+  viking   45.0%
+  spartan  43.7%
+  egypt    47.8%
+  roman    43.9%
+  japan    44.6%
 
 bot army strength by turn:
-  turn  1  stats/unit 4.3  tier 1.00  lvl 1.00
-  turn  2  stats/unit 5.2  tier 1.06  lvl 1.10
-  turn  3  stats/unit 5.9  tier 1.34  lvl 1.12
-  turn  4  stats/unit 6.8  tier 1.52  lvl 1.18
-  turn  5  stats/unit 7.8  tier 1.96  lvl 1.23
-  turn  6  stats/unit 8.8  tier 2.21  lvl 1.28
-  turn  7  stats/unit 10.2  tier 2.61  lvl 1.30
-  turn  8  stats/unit 11.2  tier 2.93  lvl 1.32
-  turn  9  stats/unit 13.0  tier 3.33  lvl 1.37
-  turn 10  stats/unit 13.9  tier 3.64  lvl 1.44
-  turn 11  stats/unit 15.5  tier 3.93  lvl 1.46
-  turn 12  stats/unit 16.2  tier 4.16  lvl 1.51
-  turn 13  stats/unit 18.1  tier 4.11  lvl 1.61
-  turn 14  stats/unit 18.7  tier 4.23  lvl 1.73
+  turn  1  stats/unit 4.5  tier 1.00  lvl 1.00
+  turn  2  stats/unit 5.3  tier 1.06  lvl 1.09
+  turn  3  stats/unit 6.1  tier 1.34  lvl 1.13
+  turn  4  stats/unit 6.9  tier 1.52  lvl 1.18
+  turn  5  stats/unit 7.8  tier 1.95  lvl 1.23
+  turn  6  stats/unit 8.5  tier 2.21  lvl 1.26
+  turn  7  stats/unit 9.6  tier 2.62  lvl 1.30
+  turn  8  stats/unit 10.9  tier 2.92  lvl 1.35
+  turn  9  stats/unit 12.0  tier 3.37  lvl 1.36
+  turn 10  stats/unit 12.9  tier 3.59  lvl 1.40
+  turn 11  stats/unit 13.9  tier 4.00  lvl 1.44
+  turn 12  stats/unit 14.6  tier 4.24  lvl 1.48
+  turn 13  stats/unit 15.7  tier 4.31  lvl 1.55
+  turn 14  stats/unit 16.8  tier 4.31  lvl 1.71
 
 abilities that never fired: none
 ```
@@ -218,14 +222,16 @@ From `tools/sim.py tools/story.js`: the same bot plays each expedition 400 times
 the armies a player would typically own by then (regions in table order); "solo" uses only the
 Medieval army. The bot buys greedily and never plays around a champion, so a person should do
 better. The bot actually does worse with more armies to choose from, because it merges less.
+Targets by danger rating: 80–90% conquest at danger 1, 70–80% at 2, 55–70% at 3, 45–55% at 4, and
+a champion win rate of 30–50%. With 400 runs a region can read a few points outside its band.
 
 ```
 region     wins danger | conquest%  boss-battle win%  avg battles | solo conquest%
-norse      3    1      |    88%        46%            6.3        |    91%
-rome       3    1      |    85%        42%            5.2        |    86%
-sparta     4    2      |    70%        32%            6.1        |    86%
-egypt      4    3      |    86%        38%            5.4        |    95%
-steppe     5    3      |    44%        49%            6.6        |    17%
-japan      5    4      |    56%        29%            6.8        |    96%
+norse      3    1      |    88%        34%            5.2        |    87%
+rome       3    1      |    83%        41%            5.4        |    94%
+sparta     4    2      |    75%        29%            5.6        |    98%
+egypt      4    3      |    73%        33%            5.7        |    88%
+steppe     5    3      |    65%        40%            7.0        |    58%
+japan      5    4      |    48%        28%            6.8        |    95%
 ```
 

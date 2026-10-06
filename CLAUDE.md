@@ -14,6 +14,10 @@ Ships as one static page for GitHub Pages.
 - `docs/ARCHITECTURE.md` – code map, battle event log, recipes for adding content, testing, gotchas.
 - `docs/DESIGN.md` – rules, numbers, every unit and item, balance snapshot.
 - `docs/ROADMAP.md` – what is untested, known weak spots, ideas.
+- `docs/index.html` – the public field guide (GitHub Pages: `/knight-knight/docs/`). **Generated** by
+  `tools/guide.py` from the game data; edit `tools/guide.js`, never the page.
+- `docs/ideas.html` – hand-written proposals: extra units, new armies, ideas from other auto-battlers.
+  `docs/guide.css` styles both pages.
 
 Read the doc that matches the task instead of re-deriving it from `index.html`.
 
@@ -35,17 +39,20 @@ simulator; change how it looks in the matching `PLAY` handler.
 tools/sim.py                       # 2,100 bot-vs-bot battles: crashes, draw rate, win rate per army
 tools/sim.py tools/story.js        # story difficulty: bot conquest rate and champion win rate per region
 tools/sim.py tools/units.js        # regenerate the unit/item tables for docs/DESIGN.md
+tools/guide.py                     # regenerate docs/index.html (the public field guide)
 tools/embed_sprite.py              # re-embed characters.PNG after editing the art
 tools/shot.sh /tmp/s.png "#demo=shop:7"       # headless Chrome screenshot (shop on turn 7)
 tools/shot.sh /tmp/b.png "#demo=battle:9"     # same, entering a battle
 tools/shot.sh /tmp/m.png "#demo=map:norse"    # world map (more hooks listed in tools/shot.sh)
+tools/shot.sh /tmp/c.png "#demo=coll:viking"  # collection screen on a tab (army key or `items`)
 tools/inject.py /tmp/t.html "<js>"            # copy of the page with a scripted UI test injected
 ```
 
 ## Rules of thumb
 
 - After any rules change run `tools/sim.py`; after any visual change take a screenshot and look at it.
-- After changing unit or item data, refresh the tables in `docs/DESIGN.md` from `tools/units.js`.
+- After changing unit, item, army or region data, refresh the tables in `docs/DESIGN.md` from
+  `tools/units.js` and run `tools/guide.py`. The in-game Collection screen reads the data directly.
 - After editing `characters.PNG`, run `tools/embed_sprite.py` or local `file://` opens show old art.
 - Keep the game a single self-contained `index.html`. Colours come from the Apollo palette the
   sprites use; text is DOM over the canvas, stat numbers are the 3×5 pixel digits drawn in canvas.

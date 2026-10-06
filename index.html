@@ -178,6 +178,28 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
 #modal li b,#modal p b{color:#e8c170;font-weight:400}
 #modal p{margin:0 0 calc(var(--u)*5);color:#c7cfcc}
 #modal .btn{margin:0 calc(var(--u)*2)}
+#coll{inset:0;overflow:auto;background:rgba(9,10,20,.96);pointer-events:auto;padding:calc(var(--u)*4) calc(var(--u)*6);font-size:max(10px,calc(var(--u)*5.4));line-height:1.15}
+#coll h2{margin:0;font-weight:400;font-size:calc(var(--u)*12);line-height:1;color:#e8c170}
+#coll h2 a{font-size:.5em;color:#73bed3;margin-left:calc(var(--u)*4);vertical-align:middle}
+#collX{position:absolute;right:calc(var(--u)*4);top:calc(var(--u)*3)}
+#collTabs{display:flex;gap:calc(var(--u)*2);margin:calc(var(--u)*3) 0}
+#collTabs .btn{flex:1;padding-left:0;padding-right:0}
+#coll b{font-weight:400}
+#coll .bonus{display:flex;gap:calc(var(--u)*4);background:#151d28;border-left:calc(var(--u)*1.5) solid var(--c);padding:calc(var(--u)*2) calc(var(--u)*3);margin-bottom:calc(var(--u)*1)}
+#coll .bonus .nm{flex:none;width:calc(var(--u)*82);color:#a8b5b2}
+#coll .bonus .nm b{display:block;font-size:1.4em;color:var(--c)}
+#coll .bonus .tr b{color:var(--c)}
+#coll .crow{display:flex;align-items:center;gap:calc(var(--u)*3);padding:calc(var(--u)*1) calc(var(--u)*3);border-top:calc(var(--u)*.5) solid #202e37}
+#coll .crow img{flex:none;width:calc(var(--u)*18);height:calc(var(--u)*18);image-rendering:pixelated}
+#coll .crow img.it{width:calc(var(--u)*10);height:calc(var(--u)*10);margin:calc(var(--u)*1) calc(var(--u)*4)}
+#coll .who{flex:none;width:calc(var(--u)*64);color:#a8b5b2}
+#coll .who b{display:block;font-size:1.25em;color:#e8c170}
+#coll .who i{font-style:normal;color:#ebede9}
+#coll .ab{flex:1}
+#coll .ab em{font-style:normal;color:#73bed3}
+#coll .ab b{color:#e8c170}
+#coll .note{color:#819796;padding:calc(var(--u)*2) calc(var(--u)*3)}
+#btnBook img{margin:0}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important}}
 </style>
 </head>
@@ -194,6 +216,7 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
     </div>
     <div id="hudr">
       <button class="btn sm hide" id="btnHome" aria-label="Leave">⌂</button>
+      <button class="btn sm" id="btnBook" aria-label="Collection"><img data-ic="list" alt=""></button>
       <button class="btn sm" id="btnHelp" aria-label="How to play">?</button>
       <button class="btn sm" id="btnMute" aria-label="Toggle sound">♪</button>
     </div>
@@ -221,8 +244,9 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
     <div id="title" class="hide">
       <h1 id="logo"></h1>
       <p>Draft an army from across history. Let them fight it out.</p>
-      <div class="row"><button class="btn gold" id="btnStory" style="animation-delay:1.1s">Story</button><button class="btn" id="btnSkirmish" style="animation-delay:1.2s">Skirmish</button><button class="btn" id="btnHow" style="animation-delay:1.3s">How to Play</button></div>
+      <div class="row"><button class="btn gold" id="btnStory" style="animation-delay:1.1s">Story</button><button class="btn" id="btnSkirmish" style="animation-delay:1.2s">Skirmish</button><button class="btn" id="btnColl" style="animation-delay:1.3s">Collection</button><button class="btn" id="btnHow" style="animation-delay:1.4s">How to Play</button></div>
     </div>
+    <div id="coll" class="hide"><h2>COLLECTION<a href="docs/index.html" target="_blank" rel="noopener">Full guide ↗</a></h2><button class="btn sm" id="collX" aria-label="Close">×</button><div id="collTabs"></div><div id="collBody"></div></div>
     <div id="modal" class="hide"><div class="box" id="modalBox"></div></div>
   </div>
   <canvas id="fxc" width="320" height="180"></canvas>
@@ -247,9 +271,9 @@ const FACTIONS = {
   viking:  {name:'Vikings',  color:'#75a743', syn:'Blood Rage', tiers:['When a Viking faints, the other Vikings gain +1/+1.','When a Viking faints, the other Vikings gain +2/+2.']},
   spartan: {name:'Spartans', color:'#cf573c', syn:'Phalanx',    tiers:['Spartans take 1 less damage (min 1).','Spartans take 2 less damage (min 1).']},
   egypt:   {name:'Egyptians',color:'#e8c170', syn:'Afterlife',  tiers:['The first Egyptian to faint rises as a Mummy with half its stats.','Every Egyptian rises once as a Mummy with half its stats.']},
-  roman:   {name:'Romans',   color:'#c65197', syn:'Drill',      tiers:['End of turn: a random Roman gains +1/+1 for good.','End of turn: every Roman gains +1/+1 for good.']},
+  roman:   {name:'Romans',   color:'#c65197', syn:'Drill',      tiers:['End of turn: a random Roman gains +1 health for good.','End of turn: every Roman gains +1 health for good.']},
   japan:   {name:'Japanese', color:'#df84a5', syn:'Bushido',    tiers:['Each Japanese unit deals +2 damage with its first attack.','Each Japanese unit deals +5 damage with its first attack.']},
-  merc:    {name:'Mercenaries', color:'#a8b5b2', syn:'Wild',    tiers:['Counts as a member of every army you field.','']},
+  merc:    {name:'Mercenaries', color:'#a8b5b2', syn:'Wild',    tiers:['Counts toward every army you field 2+ units of.','']},
 };
 const REAL_F = ['medieval','viking','spartan','egypt','roman','japan'];
 
@@ -266,9 +290,9 @@ function mkUnit(key){const d=UNITS[key];return{uid:UID++,key,atk:d.atk,hp:d.hp,x
 function pbuff(P,u,da,dh){u.atk=Math.min(CAP,u.atk+da);u.hp=Math.min(CAP,u.hp+dh);P.fx.push({k:'buff',uid:u.uid,da,dh})}
 
 // --- Medieval ---
-def('peasant','Peasant','medieval',1,3,1, 2,0, 0,'Harvest','Sell: gain {1|2|3} extra gold.',
+def('peasant','Peasant','medieval',1,3,2, 2,0, 0,'Harvest','Sell: gain {1|2|3} extra gold.',
   {shop:{sell(u,P){const n=lvlOf(u);P.gold+=n;P.fx.push({k:'gold',n})}}});
-def('longbow','Longbowman','medieval',2,2,2, 0,0, 2,'Volley','Start of battle: deal {2|4|6} damage to the rearmost enemy.',
+def('longbow','Longbowman','medieval',2,2,3, 0,0, 2,'Volley','Start of battle: deal {2|4|6} damage to the rearmost enemy.',
   {on:{start(u,B){const f=B.foes(u);if(!f.length)return;B.say(u);B.shoot(u,[f[f.length-1]],2*u.lvl)}}});
 def('knight','Knight','medieval',3,3,4, 1,0, 0,'Plate Armor','Blocks the first {hit|2 hits|3 hits} it takes each battle.',{blocks:true});
 def('halberdier','Halberdier','medieval',4,4,5, 4,0, 0,'Reach','Before attack: deal {3|6|9} damage to the enemy behind the front.',
@@ -299,21 +323,21 @@ def('leonidas','Leonidas','spartan',6,7,7, 2,2, 0,'This is Sparta!','Start of ba
 // --- Egyptians ---
 def('laborer','Laborer','egypt',1,1,3, 0,3, 1,'Tribute','Buy: give a random friend {+1/+1|+2/+2|+3/+3}.',
   {shop:{buy(u,P,rng){const o=P.team.filter(x=>x&&x!==u);if(o.length){const l=lvlOf(u);pbuff(P,rng.pick(o),l,l)}}}});
-def('medjay','Medjay','egypt',2,2,3, 3,3, 0,'Embalmed','Faint: rise as a {2/2|4/4|6/6} Mummy.',
-  {on:{faint(u,B,i){B.say(u);B.summon(u.side,i,{key:u.key,atk:2*u.lvl,hp:2*u.lvl,mummy:true})}}});
+def('medjay','Medjay','egypt',2,3,3, 3,3, 0,'Embalmed','Faint: rise as a {3/3|6/6|9/9} Mummy.',
+  {on:{faint(u,B,i){B.say(u);B.summon(u.side,i,{key:u.key,atk:3*u.lvl,hp:3*u.lvl,mummy:true})}}});
 def('priest','Priest of Set','egypt',3,2,4, 1,3, 2,'Curse','Start of battle: the strongest enemy loses {3|6|9} attack (min 1).',
   {on:{start(u,B){const f=B.foes(u);if(!f.length)return;const t=f.reduce((a,b)=>b.atk>a.atk?b:a);B.say(u);B.buff(t,-3*u.lvl,0)}}});
-def('cleopatra','Cleopatra','egypt',5,4,5, 4,3, 1,'Asp','After attack: deal {4|8|12} damage to the weakest enemy.',
+def('cleopatra','Cleopatra','egypt',5,5,6, 4,3, 1,'Asp','After attack: deal {4|8|12} damage to the weakest enemy.',
   {on:{afterAttack(u,B){const f=B.foes(u);if(!f.length)return;const t=f.reduce((a,b)=>b.hp<a.hp?b:a);B.say(u);B.shoot(u,[t],4*u.lvl)}}});
 def('pharaoh','Pharaoh','egypt',6,4,8, 2,3, 2,'Eternal Kingdom','Friend faints: raise it as a {4/4|8/8|12/12} Mummy.',
   {on:{friendFaints(u,B,dead,i){if(dead.risen)return;B.say(u);B.summon(u.side,i,{key:dead.key,atk:4*u.lvl,hp:4*u.lvl,mummy:true})}}});
 // --- Romans ---
 def('velite','Velite','roman',1,3,1, 3,4, 0,'Parting Shot','Faint: deal {2|4|6} damage to a random enemy.',
   {on:{faint(u,B){const f=B.foes(u);if(!f.length)return;B.say(u);B.shoot(u,[B.rng.pick(f)],2*u.lvl)}}});
-def('legionary','Legionary','roman',2,2,3, 0,4, 0,'Formation','Start of battle: gain {+1/+1|+2/+2|+3/+3} for each other Roman friend.',
+def('legionary','Legionary','roman',2,2,2, 0,4, 0,'Formation','Start of battle: gain {+1/+1|+2/+2|+3/+3} for each other Roman friend.',
   {on:{start(u,B){const n=B.allies(u).filter(x=>x!==u&&B.isF(x,'roman')).length;if(!n)return;B.say(u);B.buff(u,n*u.lvl,n*u.lvl)}}});
-def('aquilifer','Aquilifer','roman',3,2,4, 2,4, 2,'Eagle Standard','End of turn: give the friend ahead {+1/+1|+2/+2|+3/+3} for good.',
-  {shop:{endTurn(u,P,rng,slot){for(let i=slot-1;i>=0;i--)if(P.team[i]){const l=lvlOf(u);pbuff(P,P.team[i],l,l);break}}}});
+def('aquilifer','Aquilifer','roman',3,2,4, 2,4, 2,'Eagle Standard','End of turn: give the friend ahead {+1|+2|+3} attack for good.',
+  {shop:{endTurn(u,P,rng,slot){for(let i=slot-1;i>=0;i--)if(P.team[i]){pbuff(P,P.team[i],lvlOf(u),0);break}}}});
 def('centurion','Centurion','roman',4,4,5, 1,4, 0,'Command','Before attack: give the friend behind {+2/+1|+4/+2|+6/+3}.',
   {on:{beforeAttack(u,B){const a=B.allies(u),t=a[a.indexOf(u)+1];if(!t)return;B.say(u);B.buff(t,2*u.lvl,u.lvl)}}});
 def('caesar','Caesar','roman',5,5,5, 4,4, 1,'Veni, Vidi, Vici','Start of battle: deal {3|6|9} damage to the three front enemies.',
@@ -321,7 +345,7 @@ def('caesar','Caesar','roman',5,5,5, 4,4, 1,'Veni, Vidi, Vici','Start of battle:
 // --- Japanese ---
 def('ashigaru','Ashigaru','japan',1,2,2, 3,5, 0,'Vanguard','Start of battle: if in the front slot, gain {+1/+2|+2/+4|+3/+6}.',
   {on:{start(u,B){if(B.allies(u)[0]!==u)return;B.say(u);B.buff(u,u.lvl,2*u.lvl)}}});
-def('ronin','Ronin','japan',2,3,2, 0,5, 0,'Blood Price','Knockout: gain {+2/+2|+4/+4|+6/+6}.',
+def('ronin','Ronin','japan',2,3,3, 0,5, 0,'Blood Price','Knockout: gain {+2/+2|+4/+4|+6/+6}.',
   {on:{knockout(u,B){B.say(u);B.buff(u,2*u.lvl,2*u.lvl)}}});
 def('yumi','Yumi Archer','japan',3,1,3, 2,5, 2,'Arrow Rain','Friend ahead attacks: deal {2|4|6} damage to the rearmost enemy.',
   {on:{friendAheadAttacks(u,B){const f=B.foes(u);if(!f.length)return;B.say(u);B.shoot(u,[f[f.length-1]],2*u.lvl)}}});
@@ -329,9 +353,9 @@ def('sohei','Sohei','japan',4,3,6, 4,5, 2,'Ward','Start of battle: {the friend a
   {on:{start(u,B){const a=B.allies(u),i=a.indexOf(u),t=a.slice(Math.max(0,i-u.lvl),i);if(!t.length)return;B.say(u);t.forEach(x=>B.ward(x,1))}}});
 def('samurai','Samurai','japan',5,6,4, 1,5, 0,'Iaido','Strikes first: an enemy it fells cannot strike back. Attacks deal {+0|+3|+6} damage.',{iaido:true,sy:81});
 // --- Mercenaries (wild) ---
-def('sellsword','Sellsword','merc',3,3,4, 2,6, 1,'Paid in Gold','Wild. End of turn: if you have 2+ unspent gold, gain {+1/+1|+2/+2|+3/+3} for good.',
+def('sellsword','Sellsword','merc',3,3,5, 2,6, 1,'Paid in Gold','Wild. End of turn: if you have 2+ unspent gold, gain {+1/+1|+2/+2|+3/+3} for good.',
   {sx:31,shop:{endTurn(u,P){if(P.gold>=2){const l=lvlOf(u);pbuff(P,u,l,l)}}}});
-def('barbarian','Barbarian','merc',4,4,4, 0,6, 0,'Frenzy','Wild. After attack: gain {+2|+4|+6} attack.',
+def('barbarian','Barbarian','merc',4,5,5, 0,6, 0,'Frenzy','Wild. After attack: gain {+2|+4|+6} attack.',
   {on:{afterAttack(u,B){B.say(u);B.buff(u,2*u.lvl,0)}}});
 
 const UNIT_KEYS = Object.keys(UNITS);
@@ -347,12 +371,13 @@ const ITEMS = {
 };
 const ITEM_KEYS = Object.keys(ITEMS);
 
-// Mercenaries are wild: they add +1 to every army that has at least one real member.
+// Mercenaries are wild: each adds +1 to every army that already has 2 real members (`w` = wilds counted).
+// They push a bonus to its next tier but cannot switch one on alone.
 function synergies(units){
   const real={}; let wild=0;
   for(const u of units){ if(!u) continue; const f=UNITS[u.key].faction; if(f==='merc') wild++; else real[f]=(real[f]||0)+1; }
   const out={};
-  for(const f in real){ const n=real[f]+wild; out[f]={n, lvl:n>=4?2:n>=2?1:0}; }
+  for(const f in real){ const w=real[f]>=2?wild:0, n=real[f]+w; out[f]={n, w, lvl:n>=4?2:n>=2?1:0}; }
   return out;
 }
 
@@ -441,7 +466,7 @@ function endTurn(P,rng){
   const s=synergies(P.team).roman;
   if(s&&s.lvl){
     const rs=P.team.filter(u=>u&&['roman','merc'].includes(UNITS[u.key].faction));
-    (s.lvl>1?rs:[rng.pick(rs)]).forEach(u=>pbuff(P,u,1,1));
+    (s.lvl>1?rs:[rng.pick(rs)]).forEach(u=>pbuff(P,u,0,1));
   }
 }
 
@@ -475,7 +500,7 @@ function simulateBattle(TA,TB,seed){
     i=Math.min(i,L.length); L.splice(i,0,u); ev.push({t:'summon',side,index:i,unit:snap(u)}); return u;
   }
   const B={rng,
-    foes:u=>alive(sides[1-u.side]), allies:u=>alive(sides[u.side]), isF:(u,f)=>!u.mummy&&(u.def.faction===f||(u.def.faction==='merc'&&!!meta[u.side].syn[f])),
+    foes:u=>alive(sides[1-u.side]), allies:u=>alive(sides[u.side]), isF:(u,f)=>!u.mummy&&(u.def.faction===f||(u.def.faction==='merc'&&!!(meta[u.side].syn[f]&&meta[u.side].syn[f].w))),
     say(u){ev.push({t:'ability',id:u.id,name:u.def.ability})},
     buff(u,da,dh,q){ if(u.dead) return; const a0=u.atk,h0=u.hp; u.atk=Math.max(1,Math.min(CAP,u.atk+da)); u.hp=Math.min(CAP,u.hp+dh); ev.push({t:'buff',id:u.id,da:u.atk-a0,dh:u.hp-h0,atk:u.atk,hp:u.hp,q:!!q}); },
     buffAll(us,da,dh){us.forEach((x,i)=>B.buff(x,da,dh,i<us.length-1))},
@@ -601,12 +626,12 @@ function makeOpponent(turn,rng,foe){
 // `danger` is only the rating shown on the map. Tune with tools/sim.py tools/story.js.
 const REGIONS = {
   home:  {name:'Camelot',      army:'medieval', x:94,  y:60},
-  norse: {name:'Norse Fjords', army:'viking',   x:140, y:38,  wins:3, danger:1, cap:4, gold:-4, boss:['jarl','Jarl Ragnar',1],       blurb:'Longships line the frozen coast. The Jarl answers to no king.'},
-  rome:  {name:'Rome',         army:'roman',    x:129, y:88,  wins:3, danger:1, cap:4, gold:-5, boss:['caesar','Caesar',1],          blurb:'All roads lead here, and a legion guards every one.'},
-  sparta:{name:'Sparta',       army:'spartan',  x:153, y:101, wins:4, danger:2, cap:4, gold:-4, boss:['leonidas','King Leonidas',0], blurb:'A city without walls. Its men are the walls.'},
-  egypt: {name:'Thebes',       army:'egypt',    x:166, y:121, wins:4, danger:3, cap:5, gold:-2, boss:['pharaoh','The Pharaoh',2],    blurb:'In the valley of the kings, the dead do not rest.'},
-  steppe:{name:'Samarkand',    army:'merc',     x:218, y:72,  wins:5, danger:3, cap:5, gold:-1, boss:['barbarian','The Warlord',2],  blurb:'Where the caravans cross, every blade has a price.'},
-  japan: {name:'Kyoto',        army:'japan',    x:290, y:82,  wins:5, danger:4, cap:5, gold:-2, boss:['samurai','The Shogun',1],     blurb:'At the edge of the map, the Shogun waits beneath the blossoms.'},
+  norse: {name:'Norse Fjords', army:'viking',   x:140, y:38,  wins:3, danger:1, cap:3, gold:-3, boss:['jarl','Jarl Ragnar',1],       blurb:'Longships line the frozen coast. The Jarl answers to no king.'},
+  rome:  {name:'Rome',         army:'roman',    x:129, y:88,  wins:3, danger:1, cap:3, gold:-3, boss:['caesar','Caesar',2],          blurb:'All roads lead here, and a legion guards every one.'},
+  sparta:{name:'Sparta',       army:'spartan',  x:153, y:101, wins:4, danger:2, cap:4, gold:-5, boss:['leonidas','King Leonidas',2], blurb:'A city without walls. Its men are the walls.'},
+  egypt: {name:'Thebes',       army:'egypt',    x:166, y:121, wins:4, danger:3, cap:4, gold:-2, boss:['pharaoh','The Pharaoh',1],    blurb:'In the valley of the kings, the dead do not rest.'},
+  steppe:{name:'Samarkand',    army:'merc',     x:218, y:72,  wins:5, danger:3, cap:4, gold:-1, boss:['barbarian','The Warlord',4],  blurb:'Where the caravans cross, every blade has a price.'},
+  japan: {name:'Kyoto',        army:'japan',    x:290, y:82,  wins:5, danger:4, cap:5, gold:-2, boss:['samurai','The Shogun',0],     blurb:'At the edge of the map, the Shogun waits beneath the blossoms.'},
 };
 // [from, to, waypoint x, waypoint y]
 const ROUTES = [['home','norse',112,42],['home','rome',110,80],['rome','sparta',141,101],['sparta','egypt',163,110],['norse','steppe',182,42],['sparta','steppe',186,92],['egypt','steppe',198,104],['steppe','japan',258,68]];
@@ -643,7 +668,7 @@ const CALM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 
 const G={screen:'load',mode:'skirmish',time:0,P:null,S:null,rng:makeRng((Date.now()^(Math.random()*1e9))|0),sel:null,hover:null,drag:null,press:null,busy:false,after:null,opp:null,muted:false,
-  theme:'dusk',trans:null,sh:null,demo:false,runOver:true,map:{sel:null,x:0,y:0,path:null,seq:0,fresh:null}};
+  theme:'dusk',coll:null,trans:null,sh:null,demo:false,runOver:true,map:{sel:null,x:0,y:0,path:null,seq:0,fresh:null}};
 
 // ---------- pixel assets ----------
 const PAL={k:'#090a14',w:'#ebede9',s:'#c7cfcc',g:'#a8b5b2',G:'#577277',y:'#e8c170',o:'#de9e41',O:'#be772b',b:'#884b2b',n:'#7a4841',r:'#a53030',R:'#752438',p:'#cf573c',u:'#4f8fba',U:'#3c5e8b',d:'#253a5e',t:'#e7d5b3'};
@@ -661,6 +686,7 @@ const ART={
   castle:['k.kk.kk.k','kgkgkgkgk','kgggggggk','kgGgggGgk','kgggggggk','kggkkkggk','kggkbkggk','kggkbkggk','kkkkkkkkk'],
   crown:['y.y.y','yyyyy','ooooo'],
   ship:['...k...','..kwk..','..kwwk.','..kwk..','kkkkkkk','.kbbbk.'],
+  list:['w.wwww','......','w.wwww','......','w.wwww','......'],
   lock:['.kkkkk.','.k...k.','.k...k.','kkkkkkk','kyyyyyk','kyykyyk','kyyyyyk','kkkkkkk'],
   g_whetstone:['...ww','..wgk','.wgk.','wgk..','kk...'],
   g_chainmail:['g.g.g','ggggg','.ggg.','.ggg.','.ggg.'],
@@ -1131,7 +1157,7 @@ let lastTs=0;
 function frame(ts){
   const dt=Math.min(50,ts-lastTs||16); lastTs=ts; G.time+=dt;
   let pdt=dt;
-  if(G.screen==='battle') pdt=tick(dt)||dt*.15; else if(G.screen==='map') mapTick(dt);
+  if(G.coll) pdt=0; else if(G.screen==='battle') pdt=tick(dt)||dt*.15; else if(G.screen==='map') mapTick(dt);
   ambient(dt); updateParts(pdt); render(); renderFx(); applyShake();
   requestAnimationFrame(frame);
 }
@@ -1343,7 +1369,7 @@ function doSell(){ if(G.sel&&G.sel.type==='team'&&entityAt(G.sel)) act(G.sel,{ty
 $('btnRoll').onclick=doRoll;
 $('ctx').addEventListener('click',e=>{ if(e.target.id==='btnSell') doSell(); else if(e.target.id==='btnFreeze') doFreeze(); });
 $('btnEnd').onclick=()=>endTurnFlow();
-addEventListener('keydown',e=>{ if(G.screen!=='shop'||e.metaKey||e.ctrlKey||!$('modal').classList.contains('hide')) return; const k=e.key.toLowerCase(); if(k==='r') doRoll(); else if(k==='f') doFreeze(); else if(k==='s') doSell(); });
+addEventListener('keydown',e=>{ if(G.screen!=='shop'||G.coll||e.metaKey||e.ctrlKey||!$('modal').classList.contains('hide')) return; const k=e.key.toLowerCase(); if(k==='r') doRoll(); else if(k==='f') doFreeze(); else if(k==='s') doSell(); });
 
 // ---------- flow ----------
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -1457,12 +1483,36 @@ $('btnHome').onclick=()=>{
 
 function modal(html){ $('modalBox').innerHTML=html; $('modal').classList.add('hide'); void $('modal').offsetWidth; show('modal',true); }
 function closeModal(){ show('modal',false); }
+// ---------- collection: every army, unit and item on one screen ----------
+const COLL_TABS=[...REAL_F,'merc','items'];
+const fmtAll=text=>text.replace(/\{([^}]+)\}/g,(m,s)=>`<b>${s.split('|').join(' / ')}</b>`);
+let collTab='medieval';
+function collection(tab){
+  const k=G.coll=collTab=COLL_TABS.includes(tab)?tab:collTab; let html;
+  $('collTabs').innerHTML=COLL_TABS.map(t=>`<button class="btn sm ${t===k?'on':''}" data-tab="${t}">${t==='items'?'Items':FACTIONS[t].name}</button>`).join('');
+  if(k==='items'){
+    html=`<div class="note">Supplies are used up. Gear stays on the unit; a unit holds one piece and a new one replaces it. Everything costs ${COST} gold.</div>`+
+      ITEM_KEYS.map(i=>{ const it=ITEMS[i]; return `<div class="crow"><img class="it" src="${ICON[i].toDataURL()}" alt=""><div class="who"><b>${it.name}</b>${it.gear?'Gear':'Supply'} · Tier ${it.tier}</div><div class="ab">${it.text.replace('Gear: ','').replace(/^./,c=>c.toUpperCase())}</div></div>`; }).join('');
+  } else {
+    const f=FACTIONS[k], rid=Object.keys(REGIONS).find(id=>REGIONS[id].army===k), R=REGIONS[rid], tiers=f.tiers.filter(Boolean);
+    const own=G.mode==='story'&&G.S&&G.screen!=='title'?(G.S.conquered.includes(rid)?' · Yours':' · Not yet conquered'):'';
+    html=`<div class="bonus" style="--c:${f.color}"><div class="nm"><b>${f.syn}</b>${R.name}${R.boss?' · '+R.boss[1]:''}${own}</div><div class="tr">${tiers.map((t,i)=>`<div>${tiers.length>1?`<b>(${i?4:2})</b> `:''}${t}</div>`).join('')}</div></div>`+
+      armyUnits(k).map(u=>{ const d=UNITS[u]; return `<div class="crow"><img src="${sprURL(u)}" alt=""><div class="who"><b>${d.name}</b>Tier ${d.tier} · <i>${d.atk}/${d.hp}</i></div><div class="ab"><em>${d.ability}.</em> ${fmtAll(d.text)}</div></div>`; }).join('');
+    if(k==='egypt') html+=`<div class="crow"><img src="${SPR.medjay.m.toDataURL()}" alt=""><div class="who"><b>${MUMMY.name}</b>Token</div><div class="ab">${MUMMY.text} Raised by Egyptian abilities and the Afterlife bonus; never rises twice.</div></div>`;
+  }
+  $('collBody').innerHTML=html; show('coll',true); $('coll').scrollTop=0;
+}
+function closeCollection(){ G.coll=null; show('coll',false); }
+$('btnColl').onclick=$('btnBook').onclick=()=>{ if(!G.trans) collection(); };
+$('collX').onclick=closeCollection;
+$('collTabs').addEventListener('click',e=>{ const b=e.target.closest('[data-tab]'); if(b) collection(b.dataset.tab); });
+addEventListener('keydown',e=>{ if(e.key==='Escape'&&G.coll) closeCollection(); });
 function help(){
   modal(`<h2>How to Play</h2><ul>
 <li><b>Recruit.</b> You get 10 gold a turn. Units and supplies cost ${COST}; a new line-up of recruits costs 1.</li>
 <li><b>Arrange.</b> Drag units to reorder them. The <b>front</b> of your line is on the right and fights first.</li>
 <li><b>Merge.</b> Drop a unit on its twin to combine them. Three copies make level 2, six make level 3, and abilities grow with each level.</li>
-<li><b>Armies.</b> Field 2 or 4 units from the same army to switch on its bonus. Mercenaries count for every army you field.</li>
+<li><b>Armies.</b> Field 2 or 4 units from the same army to switch on its bonus. Mercenaries count toward every army you already field 2 of.</li>
 <li><b>Story.</b> Start with the Medieval army and march across the map. Win a land's battles and beat its champion to add its army to your recruits.</li>
 <li><b>Skirmish.</b> Every army from the start. Win ${WINS} battles before you lose ${LIVES} lives.</li>
 <li><b>Tips.</b> Freeze a recruit to keep it for next turn. Drag a unit down to the shop to sell it. Keys: R roll, F freeze, S sell.</li></ul>
@@ -1486,8 +1536,10 @@ async function boot(){
   // Screenshot hooks (muted, no transitions or drop-in animations, bot-drafted):
   //   #demo=shop:7  #demo=battle:9  #demo=map:norse,rome  #demo=won:rome (map right after a conquest)
   //   #demo=story:sparta:3 (expedition shop on turn 3)  #demo=boss:norse (the champion battle)
-  const m=/demo=(shop|battle|map|won|story|boss):?([\w,]*):?(\d*)/.exec(location.hash); if(!m) return;
+  //   #demo=coll:viking (the collection screen on a tab: an army key or `items`)
+  const m=/demo=(shop|battle|map|won|story|boss|coll):?([\w,]*):?(\d*)/.exec(location.hash); if(!m) return;
   G.demo=true; G.muted=true;
+  if(m[1]==='coll') return collection(m[2]);
   const draft=(P,n,last)=>{ for(let t=1;t<=n;t++){ P.turn=t; startTurn(P,G.rng); if(t<n||last){ botShop(P,G.rng,P.pool?'medieval':'viking'); if(t<n) endTurn(P,G.rng); } P.fx.length=0; } };
   if(m[1]==='shop'||m[1]==='battle'){ const P=G.P=newPlayer(); G.runOver=false; draft(P,+m[2]||5,m[1]==='battle'); enterShop(); if(m[1]==='battle') endTurnFlow(); return; }
   G.mode='story'; G.S=newStory(); G.S.intro=true;

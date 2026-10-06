@@ -7,6 +7,7 @@
 #   tools/shot.sh /tmp/won.png "#demo=won:rome"          map right after a conquest (unlock screen)
 #   tools/shot.sh /tmp/exp.png "#demo=story:sparta:3"    story expedition shop, turn 3
 #   tools/shot.sh /tmp/boss.png "#demo=boss:norse"       a region's champion battle
+#   tools/shot.sh /tmp/coll.png "#demo=coll:viking"      collection screen (an army key or `items`)
 # TIMEOUT=120 raises the kill timer (default 60s) for long scripted runs.
 # A fresh Chrome profile is used every run on purpose: a reused profile restores
 # its previous tab and you end up with a screenshot of some other page.

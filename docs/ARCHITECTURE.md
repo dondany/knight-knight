@@ -28,7 +28,7 @@ Everything lives in `index.html`: a `<style>` block, the DOM overlay markup, and
 | `FACTIONS`, `REAL_F` | Army names, colours, bonus text. `merc` is the wild pseudo-army |
 | `def(...)` / `UNITS` | Unit table. One `def` call per unit |
 | `ITEMS` | Supplies and gear |
-| `synergies(units)` | `{army: {n, lvl}}`; each mercenary adds 1 to every army with a real member |
+| `synergies(units)` | `{army: {n, w, lvl}}`; each mercenary adds 1 to every army that already has 2 real members (`w` = wilds counted) |
 | `newPlayer(opts)`, `tierOf`, `startTurn`, `refill`, `rollShop`, `buyUnit`, `sellUnit`, `moveUnit`, `mergeInto`, `levelUp`, `useItem`, `endTurn` | Shop-phase actions on a player state `P` |
 | `simulateBattle(teamA, teamB, seed)` | Deterministic battle; returns `{ev, result, rounds}` |
 | `botShop`, `arrange`, `makeOpponent(turn, rng, foe)` | Greedy bot that drafts through the same shop; `foe` restricts and tunes it |
@@ -57,6 +57,7 @@ view drains them with `flushFx()` to show floating text.
 | `T`, `wait`, `tween`, `tick`, `flushClock`, `hold` | Battle clock: speed, skip, timers, tweens, hit-stop, slow motion |
 | `PLAY`, `playBattle` | One async handler per battle event type |
 | `refreshUI`, `refreshInfo`, `unitInfo`, `factionInfo`, `floater` | DOM HUD, info panel, floating text |
+| `collection(tab)`, `closeCollection` | The Collection screen (`#coll`): a DOM overlay with one tab per army plus items, built straight from `FACTIONS`, `UNITS` and `ITEMS`. Opened from the title and from the list button in the HUD; `G.coll` holds the open tab and pauses the battle clock while set |
 | `pickEntity`, pointer handlers, `act(src, dst)` | Input. Every shop action goes through `act` |
 | `enterTitle`, `enterShop`, `startRun`, `newSkirmish`, `endTurnFlow`, `showBanner`, `clearStage`, `boot` | Game flow |
 | `save`, `loadSave` | `localStorage`: `knightknight.v1` (skirmish run) and `knightknight.story.v1` (`{S, P}`: map progress plus the expedition in progress, if any) |
@@ -210,7 +211,10 @@ simulator for battle effects).
   conquers the region and how often it beats the champion.
 - `tools/shot.sh` takes headless Chrome screenshots. `#demo=` hashes jump straight to a screen
   with sound, transitions and drop-in animations off: `shop:N`, `battle:N`, `map:id,id`,
-  `won:id`, `story:id:N`, `boss:id` (listed in the script's header).
+  `won:id`, `story:id:N`, `boss:id`, `coll:tab` (listed in the script's header).
+- `tools/guide.py` rebuilds `docs/index.html`, the public field guide, by running `tools/guide.js`
+  with the LOGIC region plus `PAL` and `ART` in scope. The page shows sprites straight from
+  `../characters.PNG` with CSS, and repeats the `tools/sim.js` sweep for its balance bars.
 - `tools/inject.py` writes a copy of the page with a script appended that can drive the UI with
   synthetic pointer events (`click`, `dragTo`), log state with `st()`, and `freeze(t)` CSS animations.
 
