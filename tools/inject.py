@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Make a copy of index.html with a test script injected, for scripted UI checks.
 
-  tools/inject.py /tmp/t.html "dragTo(shopX(0),SHOP_Y-8,teamX(1),TEAM_Y-8); st();"
+  tools/inject.py /tmp/t.html "dragTo(shopX(0),HAND_Y,teamX(1),TEAM_Y-8); st();"
   tools/shot.sh /tmp/t.png "#demo=shop:7" 2500 1280 720 /tmp/t.html
 
 Helpers available to the injected script (coordinates are the game's 320x180 space):

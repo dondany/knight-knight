@@ -81,13 +81,18 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
 
 .lbl{font-size:max(9px,calc(var(--u)*5));color:#a8b5b2;text-shadow:0 calc(var(--u)*.75) 0 #090a14;white-space:nowrap}
 #lblFront{transform:translateX(-50%);color:#e8c170}
-#lblShop{left:calc(var(--u)*24);top:calc(var(--u)*119)}
+#lblShop{left:calc(var(--u)*60);top:calc(var(--u)*167)}
+#hand{inset:0}
+.cd{position:absolute;width:calc(var(--u)*28);text-align:center;line-height:1;white-space:nowrap;overflow:hidden;color:#241527;transform-origin:calc(var(--u)*14) calc(var(--u)*-2)}
+.cd b{display:block;font-weight:400;font-size:calc(var(--u)*5.4)}
+.cd.lg b{font-size:calc(var(--u)*4.6);line-height:1.17}
+.cd i{display:block;font-style:normal;font-size:calc(var(--u)*4.2);color:#7a4841}
 #shopbar{left:0;right:0;top:calc(var(--u)*162);height:calc(var(--u)*14)}
 #shopbar>*{position:absolute;top:0}
 #btnRoll{left:calc(var(--u)*24)}
 #ctx{left:50%;transform:translateX(-50%);display:flex;gap:calc(var(--u)*3)}
 #btnEnd{right:calc(var(--u)*8)}
-#sellzone{left:calc(var(--u)*20);right:calc(var(--u)*20);top:calc(var(--u)*114);height:calc(var(--u)*46);background:rgba(165,48,48,.5);box-shadow:inset 0 0 0 calc(var(--u)*1) #cf573c;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*11);text-shadow:0 calc(var(--u)*1) 0 #411d31;animation:pulse .7s infinite}
+#sellzone{left:calc(var(--u)*8);right:calc(var(--u)*8);top:calc(var(--u)*110);height:calc(var(--u)*50);background:rgba(165,48,48,.5);box-shadow:inset 0 0 0 calc(var(--u)*1) #cf573c;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*11);text-shadow:0 calc(var(--u)*1) 0 #411d31;animation:pulse .7s infinite}
 
 #bnames{left:calc(var(--u)*6);right:calc(var(--u)*6);top:calc(var(--u)*15);display:flex;justify-content:space-between;align-items:flex-start;font-size:calc(var(--u)*9);line-height:1}
 #bnames .r{text-align:right}
@@ -224,6 +229,7 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
     <div id="info" class="hide"></div>
     <div id="lblFront" class="lbl hide">FRONT</div>
     <div id="lblShop" class="lbl hide"></div>
+    <div id="hand" class="hide"></div>
     <div id="sellzone" class="hide"></div>
     <div id="shopbar" class="hide">
       <button class="btn" id="btnRoll">Roll <img data-ic="coin" alt="">1</button>
@@ -657,8 +663,11 @@ function storyPath(S,to){
 //#endregion LOGIC =========================================================
 
 // ============================== VIEW ======================================
-const W=320, H=180, TEAM_Y=94, SHOP_Y=148, FIELD_Y=128;
-const teamX=i=>210-i*30, shopX=j=>38+j*30, itemX=k=>244+k*30;
+const W=320, H=180, TEAM_Y=90, HAND_Y=136, FIELD_Y=128, CARD_W=34, CARD_H=46, PITCH=36;
+// The shop is a hand of cards in one centred row: recruits, a small gap, then supplies.
+// HAND_Y is the middle of a card; handX(n) is the centre of the n-th card of the row.
+const handX=n=>{ const a=G.P.shop.length, b=G.P.items.length, gap=a&&b?8:0; return (W-(a+b)*PITCH+2-gap)/2+CARD_W/2+n*PITCH+(n>=a?gap:0); };
+const teamX=i=>210-i*30, shopX=j=>handX(j), itemX=k=>handX(G.P.shop.length+k);
 const slotX=(side,i)=>side?174+i*25:146-i*25;
 const $=id=>document.getElementById(id);
 const cv=$('cv'), g=cv.getContext('2d'), fxg=$('fxc').getContext('2d'); g.imageSmoothingEnabled=false;
@@ -734,8 +743,8 @@ async function loadSprites(){
 }
 
 const DIGITS={'0':'111101101101111','1':'010110010010111','2':'111001111100111','3':'111001111001111','4':'101101111001001','5':'111100111001111','6':'111100111101111','7':'111001001001001','8':'111101111101111','9':'111101111001111'};
-function digits(s,x,y,col){ g.fillStyle=col; for(const ch of String(s)){ const m=DIGITS[ch]; if(m) for(let i=0;i<15;i++) if(m[i]==='1') g.fillRect(x+i%3,y+(i/3|0),1,1); x+=4; } }
-function badge(x,y,val,bg,right){ const s=String(val), w=s.length*4+1, bx=right?x-w:x; g.fillStyle='#090a14'; g.fillRect(bx-1,y-1,w+2,9); g.fillStyle=bg; g.fillRect(bx,y,w,7); digits(s,bx+1,y+1,'#ebede9'); }
+function digits(s,x,y,col,c=g){ c.fillStyle=col; for(const ch of String(s)){ const m=DIGITS[ch]; if(m) for(let i=0;i<15;i++) if(m[i]==='1') c.fillRect(x+i%3,y+(i/3|0),1,1); x+=4; } }
+function badge(x,y,val,bg,right,c=g){ const s=String(val), w=s.length*4+1, bx=right?x-w:x; c.fillStyle='#090a14'; c.fillRect(bx-1,y-1,w+2,9); c.fillStyle=bg; c.fillRect(bx,y,w,7); digits(s,bx+1,y+1,'#ebede9',c); }
 
 // ---------- backgrounds ----------
 const BAYER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5], BG={field:{}};
@@ -870,7 +879,7 @@ let ambT=0;
 function ambient(dt){
   ambT+=dt; if(ambT<70) return; ambT=0; const s=G.screen, R=Math.random();
   if(s==='shop'||s==='title'){
-    const fx=s==='shop'?40:160, fy=s==='shop'?108:124;
+    const fx=s==='shop'?40:160, fy=s==='shop'?100:124;
     if(R<.5) part({x:fx+rnd(-3,3),y:fy,vx:rnd(-.006,.006),vy:rnd(-.035,-.015),life:rnd(500,1100),col:R<.2?'#e8c170':'#da863e',tw:1,ph:rnd(0,6)});
     if(Math.random()<.09) part({x:rnd(0,W),y:rnd(84,172),vx:rnd(-.006,.006),vy:rnd(-.005,.005),life:rnd(2500,5000),col:'#d0da91',tw:1,ph:rnd(0,6),wob:.25,fade:500});
     if(Math.random()<.006) FX.push({k:'star',x:rnd(30,240),y:rnd(4,28),col:'#ebede9',ms:520,t0:G.time,layer:0});
@@ -900,17 +909,17 @@ function applyShake(){ const s=G.sh, el=$('stage'); if(!s) return; const p=(G.ti
 function bump(id,cls){ const e=$(id); if(!e) return; e.classList.remove('bump','hurt'); void e.offsetWidth; e.classList.add(cls||'bump'); }
 function splash(title,sub,cls,ms){ if(skipping()) return; const e=$('splash'); e.className='ol '+(cls||''); e.innerHTML=(sub?`<small>${sub}</small>`:'')+`<b>${title}</b>`; e.style.setProperty('--ms',(ms||1100)+'ms'); void e.offsetWidth; e.classList.add('go'); clearTimeout(splash.t); splash.t=setTimeout(()=>e.classList.add('hide'),ms||1100); }
 
-// Short one-shot animations for things standing in a slot, keyed by unit uid / item id.
+// Short one-shot animations for a unit in a slot or a card in the hand, keyed by unit uid / item id.
 const AN=new Map();
-function anim(id,k,delay,x,y){ if(!G.demo&&id!=null) AN.set(id,{k,t0:G.time+(delay||0),x,y}); }
+function anim(id,k,delay){ if(!G.demo&&id!=null) AN.set(id,{k,t0:G.time+(delay||0)}); }
 const bounce=p=>{ const n=7.5625,d=2.75; return p<1/d?n*p*p:p<2/d?n*(p-=1.5/d)*p+.75:p<2.5/d?n*(p-=2.25/d)*p+.9375:n*(p-=2.625/d)*p+.984375; };
 function animOf(id){
-  const a=AN.get(id), o={dx:0,dy:0,sx:1,sy:1,al:1}; if(!a) return o;
-  const t=G.time-a.t0, D={drop:460,pop:300,land:260,hop:260,shake:300}[a.k], p=t/D;
-  if(t<0){ if(a.k==='drop') o.al=0; return o; }
+  const a=AN.get(id), o={dx:0,dy:0,sx:1,sy:1,al:1,rot:0}; if(!a) return o;
+  const t=G.time-a.t0, D={deal:340,pop:300,land:260,hop:260,shake:300}[a.k], p=t/D;
+  if(t<0){ if(a.k==='deal') o.al=0; return o; }
   if(p>=1){ AN.delete(id); return o; }
   const e=(1-p)*(1-p);
-  if(a.k==='drop'){ o.dy=-52*(1-bounce(p)); o.al=Math.min(1,p*6); if(p>.36&&!a.hit){ a.hit=1; dust(a.x,a.y,3); sfx('land'); } if(p>.36&&p<.6){ const q=(p-.36)/.24; o.sy=.72+.28*q; o.sx=1.22-.22*q; } }
+  if(a.k==='deal'){ const q=p-1; o.dy=-70*(2.7*q*q*q+1.7*q*q); o.rot=.3*q*q*(id%2?1:-1); if(!a.hit){ a.hit=1; sfx('card'); } }
   else if(a.k==='pop'){ o.sx=o.sy=1+.45*e*Math.cos(p*11); }
   else if(a.k==='land'){ o.sy=1-.32*e*Math.cos(p*9); o.sx=1+.26*e*Math.cos(p*9); }
   else if(a.k==='hop'){ o.dy=-Math.sin(p*Math.PI)*6; }
@@ -955,6 +964,68 @@ function slab(x,y,top,front,stripe,glow){
   if(stripe){ g.fillStyle=stripe; g.fillRect(x-12,y-2,24,1); }
   if(glow){ g.fillStyle=glow; g.fillRect(x-13,y-3,26,1); g.fillRect(x-13,y+5,26,1); g.fillRect(x-13,y-3,1,9); g.fillRect(x+12,y-3,1,9); }
 }
+// Card art is a slice of the unit's homeland: the colours of its army's battlefield. Supplies get a shelf.
+const CARD_BG={};
+function cardBg(f){
+  if(CARD_BG[f]) return CARD_BG[f];
+  const c=mkCanvas(28,20), x=c.getContext('2d'), t=THEMES[ARMY_THEME[f]], r=makeRng(f.length*97+f.charCodeAt(0));
+  if(t){
+    const n=t.sky.length-1, ph=r()*6;
+    for(let y=0;y<14;y++) for(let px=0;px<28;px++){ const v=y/14*n, i=Math.min(n-1,Math.floor(v)); x.fillStyle=t.sky[v-i>(BAYER[(y&3)*4+(px&3)]+.5)/16?i+1:i]; x.fillRect(px,y,1,1); }
+    x.fillStyle=t.r1[0]; for(let px=0;px<28;px++){ const h=Math.round(3+Math.sin(px*.3+ph)*1.6+Math.sin(px*.8+ph*2)*.8); x.fillRect(px,14-h,1,h); }
+    x.fillStyle=t.ground; x.fillRect(0,14,28,6); x.fillStyle=t.road; x.fillRect(0,17,28,2);
+    for(let i=0;i<9;i++){ const gy=14+r.int(6); x.fillStyle=r.pick(gy===17||gy===18?t.rs:t.gs); x.fillRect(r.int(27),gy,1+r.int(2),1); }
+  } else {
+    x.fillStyle='#241527'; x.fillRect(0,0,28,20); disc(x,14,9,8,'#402751'); disc(x,14,9,5,'#7a367b');
+    x.fillStyle='#402751'; x.fillRect(0,16,28,4); x.fillStyle='#7a367b'; x.fillRect(0,16,28,1);
+  }
+  return CARD_BG[f]=c;
+}
+// A shop card around its centre. o: {x,y,e (shop entry),rot,sx,sy,alpha,dim,glow}
+// The face is painted flat on a scratch canvas and then blitted, so a tilted or squashed card keeps hard pixels.
+// Card rows: 0 outline, 1 frame, 3-22 art, 24-42 parchment (name and ability are DOM text, see cardLabels), 44 frame.
+const CARDC=mkCanvas(CARD_W+4,CARD_H+6), cg=CARDC.getContext('2d');
+function drawCard(o){
+  const e=o.e, u=e.u, d=u?UNITS[u.key]:ITEMS[e.item], col=u?FACTIONS[d.faction].color:'#7a367b';
+  const R=(x,y,w,h,c)=>{ cg.fillStyle=c; cg.fillRect(x+2,y+2,w,h); };
+  cg.clearRect(0,0,CARDC.width,CARDC.height);
+  R(1,0,32,46,o.glow||'#090a14'); R(0,1,34,44,o.glow||'#090a14');
+  R(1,1,32,44,col); R(1,1,32,1,'rgba(235,237,233,.4)'); R(1,44,32,1,'rgba(9,10,20,.3)'); R(32,2,1,42,'rgba(9,10,20,.15)');
+  R(2,2,30,42,'#090a14'); cg.drawImage(cardBg(u?d.faction:'item'),5,5);
+  R(3,24,28,19,'#e7d5b3'); R(3,24,28,1,'#ebede9'); R(3,41,28,2,'#d7b594');
+  for(let i=0;i<d.tier;i++) R(18-d.tier+i*2,37,1,4,'#ad7757');
+  if(u){
+    const s=SPR[u.key], bob=((G.time+u.uid*137)/460|0)%2;
+    if(s){ cg.drawImage(s.n,0,0,18,11,10,7+bob,18,11); cg.drawImage(s.n,0,11,18,7,10,18,18,7); }
+    badge(4,38,u.atk,'#577277',false,cg); badge(34,38,u.hp,'#a53030',true,cg);
+  } else cg.drawImage(ICON[e.item],14,9+((G.time/500+e.id|0)%2));
+  // price: a coin on the corner
+  R(1,-1,5,9,'#090a14'); R(0,0,7,7,'#090a14'); R(-1,1,9,5,'#090a14');
+  R(1,0,5,7,'#de9e41'); R(0,1,7,5,'#de9e41'); R(1,0,4,6,'#e8c170'); R(0,1,6,4,'#e8c170');
+  digits(COST,4,3,o.dim?'#a53030':'#602c2c',cg);
+  if(e.frozen){
+    R(1,1,32,44,'rgba(164,221,219,.26)'); R(1,0,32,1,'#ebede9'); R(0,1,34,1,'#ebede9'); R(2,2,5,1,'#ebede9'); R(24,2,7,1,'#ebede9'); R(12,2,3,1,'#ebede9');
+    [[4,3],[9,2],[15,4],[21,2],[27,3]].forEach(([ix,ih])=>{ R(ix,45,2,1,'#a4dddb'); R(ix,46,1,ih,'#a4dddb'); R(ix,46,1,1,'#ebede9'); });
+  }
+  if(o.dim) R(1,1,32,44,'rgba(9,10,20,.42)');
+  g.save(); g.translate(Math.round(o.x),Math.round(o.y)); if(o.rot) g.rotate(o.rot); g.scale(o.sx||1,o.sy||1);
+  g.globalAlpha=o.alpha==null?1:Math.max(0,Math.min(1,o.alpha));
+  g.drawImage(CARDC,-CARD_W/2-2,-CARD_H/2-2);
+  g.restore(); g.globalAlpha=1;
+}
+// Card names are DOM text riding on the canvas cards; renderShop places one label per card every frame.
+const CDL=[];
+function cardLabels(list){
+  while(CDL.length<list.length){ const d=document.createElement('div'); d.className='cd'; d.innerHTML='<b></b><i></i>'; $('hand').appendChild(d); CDL.push({d,key:'',css:''}); }
+  CDL.forEach((c,n)=>{
+    const o=list[n]; if(!o){ if(c.css!=='-'){ c.css='-'; c.d.style.cssText='display:none'; } return; }
+    const u=o.e.u, d=u?UNITS[u.key]:ITEMS[o.e.item], key=d.name;
+    if(c.key!==key){ c.key=key; c.d.firstChild.textContent=d.name; c.d.lastChild.textContent=u?d.ability:d.gear?'Gear':'Supply'; c.d.classList.toggle('lg',d.name.length>11); }
+    const al=(o.alpha==null?1:Math.max(0,Math.min(1,o.alpha)))*(o.dim?.6:1);
+    const css=`left:calc(var(--u)*${Math.round(o.x)-14});top:calc(var(--u)*${Math.round(o.y)+2});opacity:${al.toFixed(2)};transform:rotate(${(o.rot||0).toFixed(3)}rad) scale(${(o.sx||1).toFixed(3)},${(o.sy||1).toFixed(3)})`;
+    if(c.css!==css){ c.css=css; c.d.style.cssText=css; }
+  });
+}
 function corners(l,r,t,b){ g.fillStyle='#ebede9'; [[l,t,1],[r,t,-1],[l,b,1],[r,b,-1]].forEach(([cx,cy,dx])=>{ g.fillRect(dx>0?cx:cx-3,cy,4,1); g.fillRect(cx,cy===t?cy:cy-3,1,4); }); }
 function brackets(x,y){ const o=(G.time/250|0)%2; corners(x-14-o,x+13+o,y-23-o,y+11+o); }
 function arrowDown(x,y,col){ const b=(G.time/180|0)%2; g.fillStyle='#090a14'; g.fillRect(x-3,y-1+b,7,3); g.fillRect(x-2,y+2+b,5,1); g.fillRect(x-1,y+3+b,3,1); g.fillStyle=col; g.fillRect(x-2,y+b,5,1); g.fillRect(x-1,y+1+b,3,1); g.fillRect(x,y+2+b,1,1); }
@@ -969,9 +1040,10 @@ function targetOK(src,i){
   if(src.type==='item') return P.gold>=COST&&canUseItem(P,P.items[src.i].item,i);
   return false;
 }
+const CX=new Map(), GHOST=[]; let handT=0;
 function renderShop(){
   const P=G.P, src=activeSrc(), dragging=G.drag&&G.drag.moved?G.drag:null, blink=(G.time/300|0)%2;
-  g.drawImage(BG.camp,0,0); twinkles(); campfire(40,112);
+  g.drawImage(BG.camp,0,0); twinkles(); campfire(40,104);
   for(let i=0;i<5;i++){
     const x=teamX(i), u=P.team[i], d=u&&UNITS[u.key], ok=targetOK(src,i), hv=same(G.hover,{type:'team',i})&&!dragging;
     slab(x,TEAM_Y,hv?'#819796':'#577277','#394a50',d?FACTIONS[d.faction].color:null,ok?(blink?'#e8c170':'#de9e41'):null);
@@ -980,26 +1052,32 @@ function renderShop(){
     if(same(G.sel,{type:'team',i})) brackets(x,TEAM_Y);
   }
   const ax=teamX(0)+17+((G.time/400|0)%2); g.fillStyle='#e8c170'; g.fillRect(ax,TEAM_Y-12,1,5); g.fillRect(ax+1,TEAM_Y-11,1,3); g.fillRect(ax+2,TEAM_Y-10,1,1);
-  P.shop.forEach((s,j)=>{
-    const x=shopX(j), d=UNITS[s.u.key], hv=same(G.hover,{type:'shop',i:j})&&!dragging, a=animOf(s.u.uid);
-    slab(x,SHOP_Y,s.frozen?'#73bed3':hv?'#de9e41':'#be772b',s.frozen?'#4f8fba':'#884b2b',FACTIONS[d.faction].color,s.bonus&&blink?'#e8c170':null);
-    if(!(dragging&&same(dragging.src,{type:'shop',i:j}))) drawUnit({key:s.u.key,x:x+a.dx,y:SHOP_Y-2+a.dy-(hv?1:0),sx:a.sx,sy:a.sy,phase:s.u.uid,atk:s.u.atk,hp:s.u.hp,lvl:1,alpha:a.al*(P.gold<COST?.55:1)});
-    if(s.frozen){ g.fillStyle='#a4dddb'; g.fillRect(x-10,SHOP_Y+5,1,2); g.fillRect(x-3,SHOP_Y+5,1,3); g.fillRect(x+6,SHOP_Y+5,1,2); g.fillStyle='#ebede9'; g.fillRect(x-12,SHOP_Y-2,3,1); g.fillRect(x+8,SHOP_Y-2,2,1); }
-    if(s.bonus&&Math.random()<.08) sparkle(x,SHOP_Y-8,'#e8c170',1);
-    if(same(G.sel,{type:'shop',i:j})) brackets(x,SHOP_Y);
+  // the hand: cards slide to their place as the row re-centres, lift on hover and when selected
+  const cards=[...P.shop.map((s,j)=>({s,id:s.u.uid,h:{type:'shop',i:j}})),...P.items.map((s,k)=>({s,id:s.id,h:{type:'item',i:k}}))];
+  const ease=G.demo||CALM?1:Math.min(1,(G.time-handT)*.02), labels=[], dim=P.gold<COST; handT=G.time;
+  for(const id of CX.keys()) if(!cards.some(c=>c.id===id)) CX.delete(id);
+  cards.forEach((c,n)=>{
+    const tx=handX(n), px=CX.get(c.id), x=px==null||Math.abs(tx-px)<.6?tx:px+(tx-px)*ease, rx=Math.round(x); CX.set(c.id,x);
+    if(dragging&&same(dragging.src,c.h)){ g.fillStyle='rgba(9,10,20,.3)'; g.fillRect(rx-16,HAND_Y-22,32,44); return; }
+    const hv=same(G.hover,c.h)&&!dragging, sel=same(G.sel,c.h), a=animOf(c.id), y=HAND_Y-(sel?4:hv?2:0);
+    const o={x:x+a.dx,y:y+a.dy,e:c.s,rot:a.rot,sx:a.sx,sy:a.sy,alpha:a.al,dim,glow:c.s.bonus&&blink?'#e8c170':null};
+    if(a.al>=1&&!a.rot){ g.fillStyle='rgba(9,10,20,.4)'; g.fillRect(rx-15,HAND_Y-21+Math.max(0,a.dy),34,46); }
+    drawCard(o); labels.push(o);
+    if(c.s.bonus&&Math.random()<.08) sparkle(x,y-18,'#e8c170',1);
+    if(sel){ const k=(G.time/250|0)%2; corners(rx-19-k,rx+18+k,y-25-k,y+24+k); }
   });
-  P.items.forEach((s,k)=>{
-    const x=itemX(k), hv=same(G.hover,{type:'item',i:k})&&!dragging, a=animOf(s.id);
-    slab(x,SHOP_Y,s.frozen?'#73bed3':hv?'#a23e8c':'#7a367b',s.frozen?'#4f8fba':'#402751');
-    if(!(dragging&&same(dragging.src,{type:'item',i:k}))){ g.globalAlpha=a.al*(P.gold<COST?.55:1); g.drawImage(ICON[s.item],x-5,Math.round(SHOP_Y-14+a.dy-(hv?1:0)+((G.time/500+k|0)%2))); g.globalAlpha=1; }
-    if(same(G.sel,{type:'item',i:k})) brackets(x,SHOP_Y);
-  });
+  // cards thrown away by a roll
+  for(let i=GHOST.length-1;i>=0;i--){ const q=GHOST[i], p=(G.time-q.t0)/240; if(p>=1){ GHOST.splice(i,1); continue; } if(p<0) continue;
+    const o={x:q.x,y:HAND_Y+p*p*64,e:q.e,rot:p*.5*(i%2?1:-1),alpha:1-p*p}; drawCard(o); labels.push(o); }
   drawParts(g,0);
   if(dragging){
+    // a card stays a card while it is over the hand and becomes the unit (or the item) once it is carried onto the field
     const e=entityAt(dragging.src), rot=Math.max(-.45,Math.min(.45,(dragging.vx||0)*.05));
-    if(e&&dragging.src.type==='item'){ g.save(); g.translate(Math.round(dragging.x),Math.round(dragging.y)); g.rotate(rot); g.drawImage(ICON[e.item],-5,-5); g.restore(); }
+    if(e&&dragging.card){ const o={x:dragging.x-dragging.ox,y:dragging.y-dragging.oy,e,rot:rot*.6}; drawCard(o); labels.push(o); }
+    else if(e&&dragging.src.type==='item'){ g.save(); g.translate(Math.round(dragging.x),Math.round(dragging.y)); g.rotate(rot); g.drawImage(ICON[e.item],-5,-5); g.restore(); }
     else if(e){ const u=e.u||e; drawUnit({key:u.key,x:dragging.x,y:dragging.y+5,shadow:dragging.y+14,rot,phase:u.uid}); }
   }
+  cardLabels(labels);
 }
 function renderTitle(){
   g.drawImage(BG.camp,0,0); twinkles(); campfire(160,128);
@@ -1181,7 +1259,7 @@ const SFX={
   coin(){ const now=performance.now(); coinN=now-coinT<400?Math.min(coinN+1,8):0; coinT=now; tone(1047*Math.pow(1.06,coinN),.07,'square',.03); },
   roll(){for(let i=0;i<4;i++) tone(300+i*90,.05,'triangle',.06,0,i*.045)}, freeze(){tone(1400,.14,'sine',.05,-600);tone(2100,.1,'sine',.03,-900,.04)},
   error(){tone(160,.14,'sawtooth',.04,-40)}, level(){[523,659,784,1047].forEach((f,i)=>tone(f,.11,'square',.04,0,i*.07))}, merge(){tone(440,.08,'triangle',.06,440);tone(880,.12,'square',.03,0,.08)},
-  land(){noise(.07,.06,500);tone(vary(140),.06,'sine',.06,-50)}, pop(){tone(vary(500),.09,'triangle',.05,500);noise(.12,.04,2500)}, step(){noise(.03,.025,700)}, whoosh(){noise(.3,.05,1500);tone(300,.25,'sine',.02,600)},
+  land(){noise(.07,.06,500);tone(vary(140),.06,'sine',.06,-50)}, card(){noise(.05,.035,vary(3200));tone(vary(520),.03,'triangle',.02,-200)}, pop(){tone(vary(500),.09,'triangle',.05,500);noise(.12,.04,2500)}, step(){noise(.03,.025,700)}, whoosh(){noise(.3,.05,1500);tone(300,.25,'sine',.02,600)},
   swing(){noise(.08,.03,3000)}, hit(){noise(.09,.09,1100);tone(vary(190),.09,'sawtooth',.05,-130)}, bighit(){noise(.2,.14,800);tone(vary(120),.2,'sawtooth',.08,-80);tone(60,.2,'sine',.1,-25)},
   block(){tone(vary(900),.07,'square',.04,-300);noise(.05,.05,4000)}, faint(){tone(vary(330),.22,'triangle',.06,-260)}, finish(){noise(.5,.14,500);tone(80,.5,'sine',.12,-40)},
   buff(){tone(vary(700),.07,'triangle',.05,300)}, curse(){tone(vary(300),.18,'sawtooth',.04,-150)}, ability(){tone(vary(880),.05,'square',.025)}, shot(){tone(vary(1200),.1,'triangle',.04,-800)}, summon(){tone(220,.18,'sine',.06,330)},
@@ -1239,7 +1317,7 @@ function setHud(o){
 let synSeen='';
 function refreshUI(){
   const P=G.P, s=G.screen, shop=s==='shop', battle=s==='battle', map=s==='map';
-  show('hud',shop||battle); show('syn',shop); show('shopbar',shop); show('lblFront',shop); show('lblShop',shop);
+  show('hud',shop||battle); show('syn',shop); show('shopbar',shop); show('lblFront',shop); show('lblShop',shop); show('hand',shop);
   show('bnames',battle); show('bbar',battle&&$('banner').classList.contains('hide')); show('title',s==='title');
   show('maphead',map); show('maplbls',map); show('crests',map); show('mapcard',map&&!G.map.path); show('btnHome',shop||map);
   if(shop||battle){
@@ -1253,7 +1331,7 @@ function refreshUI(){
       :'<div class="syn-hint">Field 2 or 4 units of the same army to unlock its bonus.</div>';
     if(on.some(k=>!seen.includes(k))&&synSeen!=='-') sfx('buff'); synSeen=on.join();
     $('lblFront').style.left=`calc(var(--u)*${teamX(0)})`; $('lblFront').style.top=`calc(var(--u)*${TEAM_Y+11})`;
-    $('lblShop').textContent=`RECRUITS · TIER ${tierOf(P)} · ${COST} GOLD EACH`;
+    $('lblShop').textContent=`TIER ${tierOf(P)} RECRUITS`;
     $('btnRoll').disabled=P.gold<1; $('btnEnd').classList.toggle('pulse',P.gold<1&&P.team.some(Boolean));
     const e=entityAt(G.sel); let ctx='';
     if(e&&G.sel.type==='team') ctx=`<button class="btn red" id="btnSell">Sell +${lvlOf(e)}</button>`;
@@ -1282,7 +1360,7 @@ function flushFx(){
     else if(f.k==='buff'){ floater(x,TEAM_Y-24,delta(f.da,f.dh),'buff'); sparkle(x,TEAM_Y-10,['#a8ca58','#d0da91'],6); anim(f.uid,'hop'); }
     else if(f.k==='text'){ floater(x,TEAM_Y-24,f.text,'buff'); sparkle(x,TEAM_Y-10,['#73bed3','#ebede9'],6); anim(f.uid,'pop'); }
     else if(f.k==='level'){ floater(x,TEAM_Y-34,'LEVEL UP!','gold'); sfx('level'); flash('#e8c170',220); shake(1.5,220); ring(x,TEAM_Y-9,'#e8c170',22,450); ring(x,TEAM_Y-9,'#ebede9',13,300); burst(x,TEAM_Y-10,['#e8c170','#ebede9','#de9e41'],18,.1,600); anim(f.uid,'pop');
-      const b=P.shop.findIndex(s=>s.bonus&&!s.seen); if(b>=0){ P.shop[b].seen=1; anim(P.shop[b].u.uid,'drop',250,shopX(b),SHOP_Y); } }
+      const b=P.shop.findIndex(s=>s.bonus&&!s.seen); if(b>=0){ P.shop[b].seen=1; anim(P.shop[b].u.uid,'deal',250); } }
   }
 }
 function deny(msg,src){ floater(W/2,108,msg,'err'); sfx('error'); shake(1,140); anim(idOf(entityAt(src)),'shake'); }
@@ -1314,8 +1392,9 @@ function act(src,dst){
 function pickEntity(x,y){
   const P=G.P;
   for(let i=0;i<5;i++) if(Math.abs(x-teamX(i))<=14&&y>=TEAM_Y-28&&y<=TEAM_Y+12) return {type:'team',i};
-  for(let j=0;j<P.shop.length;j++) if(Math.abs(x-shopX(j))<=14&&y>=SHOP_Y-26&&y<=SHOP_Y+12) return {type:'shop',i:j};
-  for(let k=0;k<P.items.length;k++) if(Math.abs(x-itemX(k))<=14&&y>=SHOP_Y-26&&y<=SHOP_Y+12) return {type:'item',i:k};
+  if(y<HAND_Y-27||y>HAND_Y+23) return null;
+  for(let j=0;j<P.shop.length;j++) if(Math.abs(x-shopX(j))<=17) return {type:'shop',i:j};
+  for(let k=0;k<P.items.length;k++) if(Math.abs(x-itemX(k))<=17) return {type:'item',i:k};
   return null;
 }
 const pickNode=(x,y)=>Object.keys(REGIONS).find(id=>Math.abs(x-REGIONS[id].x)<=13&&y>=REGIONS[id].y-24&&y<=REGIONS[id].y+12)||null;
@@ -1325,12 +1404,14 @@ cv.addEventListener('pointerdown',e=>{
   if(G.screen==='map'){ if(!G.map.path){ const id=pickNode(p.x,p.y); if(id!==G.map.sel){ G.map.sel=id; if(id){ sfx('click'); ring(REGIONS[id].x,REGIONS[id].y,'#ebede9',14,300); } refreshUI(); } } return; }
   if(G.screen!=='shop') return;
   const h=pickEntity(p.x,p.y); G.press=p; G.hover=null;
-  if(h&&entityAt(h)){ G.drag={src:h,x:p.x,y:p.y,vx:0,moved:false}; try{cv.setPointerCapture(e.pointerId)}catch(_){} }
+  if(h&&entityAt(h)){ const c=h.type!=='team'; G.drag={src:h,x:p.x,y:p.y,vx:0,moved:false,card:c,ox:c?p.x-(h.type==='shop'?shopX(h.i):itemX(h.i)):0,oy:c?p.y-HAND_Y:0}; try{cv.setPointerCapture(e.pointerId)}catch(_){} }
 });
 cv.addEventListener('pointermove',e=>{
   const p=toV(e);
   if(G.screen==='shop'){
-    if(G.drag){ G.drag.vx=G.drag.vx*.7+(p.x-G.drag.x)*.3; G.drag.x=p.x; G.drag.y=p.y; if(!G.drag.moved&&Math.hypot(p.x-G.press.x,p.y-G.press.y)>3){ G.drag.moved=true; G.sel=null; sfx('click'); refreshUI(); } }
+    if(G.drag){ const d=G.drag, c=d.src.type!=='team'&&p.y>HAND_Y-28; d.vx=d.vx*.7+(p.x-d.x)*.3; d.x=p.x; d.y=p.y;
+      if(c!==d.card){ d.card=c; if(d.moved){ sfx('card'); if(!c) sparkle(p.x,p.y,'#e7d5b3',5); } }
+      if(!G.drag.moved&&Math.hypot(p.x-G.press.x,p.y-G.press.y)>3){ G.drag.moved=true; G.sel=null; sfx('click'); refreshUI(); } }
     else if(e.pointerType==='mouse'){ const h=pickEntity(p.x,p.y), hv=h&&entityAt(h)?h:null; if(!same(hv,G.hover)&&(hv||G.hover&&G.hover.type!=='faction')){ G.hover=hv; refreshInfo(); } }
   } else if(G.screen==='battle'){
     let hv=null; for(const L of BV.views) for(const u of L) if(Math.abs(p.x-u.x)<=11&&p.y>=FIELD_Y-22&&p.y<=FIELD_Y+12) hv={type:'bunit',i:u.id};
@@ -1341,9 +1422,9 @@ cv.addEventListener('pointerup',e=>{
   if(G.screen!=='shop'||G.busy||G.trans){ G.drag=null; return; }
   const p=toV(e), d=G.drag, h=pickEntity(p.x,p.y); G.drag=null;
   if(d&&d.moved){
-    if(d.src.type==='team'&&p.y>114) act(d.src,{type:'sell'});
+    if(d.src.type==='team'&&p.y>HAND_Y-26) act(d.src,{type:'sell'});
     else if(h&&h.type==='team') act(d.src,h);
-    else{ anim(idOf(entityAt(d.src)),'land'); refreshUI(); }
+    else{ anim(idOf(entityAt(d.src)),d.src.type==='team'?'land':'pop'); refreshUI(); }
     return;
   }
   if(G.sel&&G.sel.type!=='faction'&&h&&h.type==='team'&&!same(G.sel,h)) return act(G.sel,h);
@@ -1356,15 +1437,16 @@ cv.addEventListener('pointerleave',()=>{ if(G.hover&&G.hover.type!=='faction'){ 
 $('syn').addEventListener('pointerover',e=>{ const r=e.target.closest('.syn-row'); if(r){ G.hover={type:'faction',i:r.dataset.f}; refreshInfo(); } });
 $('syn').addEventListener('pointerout',()=>{ if(G.hover&&G.hover.type==='faction'){ G.hover=null; refreshInfo(); } });
 $('syn').addEventListener('click',e=>{ const r=e.target.closest('.syn-row'); if(r){ const h={type:'faction',i:r.dataset.f}; G.sel=same(G.sel,h)?null:h; refreshUI(); } });
-function dropIn(){ const P=G.P; let n=0; P.shop.forEach((s,j)=>{ if(!s.frozen) anim(s.u.uid,'drop',n++*70,shopX(j),SHOP_Y); }); P.items.forEach((s,k)=>{ if(!s.frozen) anim(s.id,'drop',n++*70,itemX(k),SHOP_Y); }); }
+function dropIn(delay){ let n=0; [...G.P.shop,...G.P.items].forEach(s=>{ if(!s.frozen) anim(idOf(s),'deal',(delay||0)+n++*60); }); }
 function doRoll(){
   if(G.screen!=='shop'||G.busy||G.trans) return; const P=G.P;
-  const old=[...P.shop.map((s,j)=>s.frozen?null:shopX(j)),...P.items.map((s,k)=>s.frozen?null:itemX(k))];
+  const old=[...P.shop,...P.items].map((e,n)=>({e,x:handX(n)})).filter(o=>!o.e.frozen);
   if(!rollShop(P,G.rng)) return deny('Not enough gold');
-  old.forEach(x=>{ if(x!=null) dust(x,SHOP_Y-6,4,'#c09473'); }); sfx('roll'); floater(24,22,'-1','spend'); dropIn();
+  if(!G.demo&&!CALM) old.forEach((o,n)=>GHOST.push({e:o.e,x:o.x,t0:G.time+n*25}));
+  sfx('roll'); floater(24,22,'-1','spend'); dropIn(140);
   if(G.sel&&G.sel.type!=='team') G.sel=null; G.hover=null; save(); refreshUI();
 }
-function doFreeze(){ const h=G.sel, e=!G.busy&&h&&h.type!=='team'&&entityAt(h); if(!e) return; e.frozen=!e.frozen; sfx('freeze'); const x=h.type==='shop'?shopX(h.i):itemX(h.i); burst(x,SHOP_Y-8,['#a4dddb','#ebede9','#73bed3'],12,.07); ring(x,SHOP_Y-8,'#a4dddb',13,300); anim(idOf(e),'pop'); save(); refreshUI(); }
+function doFreeze(){ const h=G.sel, e=!G.busy&&h&&h.type!=='team'&&entityAt(h); if(!e) return; e.frozen=!e.frozen; sfx('freeze'); const x=h.type==='shop'?shopX(h.i):itemX(h.i); burst(x,HAND_Y-6,['#a4dddb','#ebede9','#73bed3'],14,.09); ring(x,HAND_Y,'#a4dddb',26,320); anim(idOf(e),'pop'); save(); refreshUI(); }
 function doSell(){ if(G.sel&&G.sel.type==='team'&&entityAt(G.sel)) act(G.sel,{type:'sell'}); }
 $('btnRoll').onclick=doRoll;
 $('ctx').addEventListener('click',e=>{ if(e.target.id==='btnSell') doSell(); else if(e.target.id==='btnFreeze') doFreeze(); });
@@ -1373,7 +1455,7 @@ addEventListener('keydown',e=>{ if(G.screen!=='shop'||G.coll||e.metaKey||e.ctrlK
 
 // ---------- flow ----------
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-function clearStage(){ G.sel=G.hover=G.drag=null; G.busy=false; T.token++; show('banner',false); show('splash',false); $('fl').innerHTML=''; PT.length=0; FX.length=0; AN.clear(); cv.classList.remove('grey'); cv.style.cursor=''; for(const k in HUDV) delete HUDV[k]; }
+function clearStage(){ G.sel=G.hover=G.drag=null; G.busy=false; T.token++; show('banner',false); show('splash',false); $('fl').innerHTML=''; PT.length=0; FX.length=0; AN.clear(); GHOST.length=0; CX.clear(); cv.classList.remove('grey'); cv.style.cursor=''; for(const k in HUDV) delete HUDV[k]; }
 function enterShop(){
   clearStage(); G.screen='shop'; synSeen='-'; const P=G.P;
   refreshUI(); flushFx(); dropIn(); P.team.forEach((u,i)=>{ if(u) anim(u.uid,'hop',i*60); });
@@ -1509,13 +1591,13 @@ $('collTabs').addEventListener('click',e=>{ const b=e.target.closest('[data-tab]
 addEventListener('keydown',e=>{ if(e.key==='Escape'&&G.coll) closeCollection(); });
 function help(){
   modal(`<h2>How to Play</h2><ul>
-<li><b>Recruit.</b> You get 10 gold a turn. Units and supplies cost ${COST}; a new line-up of recruits costs 1.</li>
+<li><b>Recruit.</b> You get 10 gold a turn. Drag a card from your hand onto your line: units and supplies cost ${COST}, and a fresh hand costs 1.</li>
 <li><b>Arrange.</b> Drag units to reorder them. The <b>front</b> of your line is on the right and fights first.</li>
 <li><b>Merge.</b> Drop a unit on its twin to combine them. Three copies make level 2, six make level 3, and abilities grow with each level.</li>
 <li><b>Armies.</b> Field 2 or 4 units from the same army to switch on its bonus. Mercenaries count toward every army you already field 2 of.</li>
 <li><b>Story.</b> Start with the Medieval army and march across the map. Win a land's battles and beat its champion to add its army to your recruits.</li>
 <li><b>Skirmish.</b> Every army from the start. Win ${WINS} battles before you lose ${LIVES} lives.</li>
-<li><b>Tips.</b> Freeze a recruit to keep it for next turn. Drag a unit down to the shop to sell it. Keys: R roll, F freeze, S sell.</li></ul>
+<li><b>Tips.</b> Freeze a card to keep it for next turn. Drag a unit down onto your hand to sell it. Keys: R roll, F freeze, S sell.</li></ul>
 <button class="btn gold" id="btnOk">Got it</button>`);
   $('btnOk').onclick=closeModal; $('btnOk').focus({preventScroll:true});
 }

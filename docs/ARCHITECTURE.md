@@ -52,6 +52,7 @@ view drains them with `flushFx()` to show floating text.
 | `paintCamp`, `THEMES`, `paintField`, `field`, `paintMap`, `LANDS` | Procedural backgrounds: the camp, one battlefield per army homeland (painted lazily, cached in `BG.field`), and the world map |
 | `part`, `burst`, `dust`, `sparkle`, `coins`, `confetti`, `firework`, `ring`, `spark`, `beam`, `flash`, `shake`, `splash`, `bump`, `go`, `anim`/`animOf`, `ambient` | The juice layer (see below) |
 | `drawUnit`, `slab`, `badge`, `brackets` | Canvas drawing primitives |
+| `drawCard`, `cardBg`, `cardLabels` | The shop's hand of cards (see below) |
 | `renderShop`, `renderBattle`, `renderTitle`, `renderMap`, `renderFx`, `frame` | Per-frame rendering |
 | `routePts`, `mapTick`, `mapCard`, `march`, `enterMap`, `finale` | World map: routes, the walking knight, the region card, conquest celebration |
 | `T`, `wait`, `tween`, `tick`, `flushClock`, `hold` | Battle clock: speed, skip, timers, tweens, hit-stop, slow motion |
@@ -62,8 +63,26 @@ view drains them with `flushFx()` to show floating text.
 | `enterTitle`, `enterShop`, `startRun`, `newSkirmish`, `endTurnFlow`, `showBanner`, `clearStage`, `boot` | Game flow |
 | `save`, `loadSave` | `localStorage`: `knightknight.v1` (skirmish run) and `knightknight.story.v1` (`{S, P}`: map progress plus the expedition in progress, if any) |
 
-Screen coordinates: `teamX(i)`, `shopX(j)`, `itemX(k)`, `TEAM_Y`, `SHOP_Y` for the shop;
-`slotX(side, i)` and `FIELD_Y` for battle. The `_Y` values are where feet stand.
+Screen coordinates: `teamX(i)` and `TEAM_Y` for the army line, `shopX(j)`, `itemX(k)` and `HAND_Y`
+for the cards; `slotX(side, i)` and `FIELD_Y` for battle. `TEAM_Y` and `FIELD_Y` are where feet
+stand, `HAND_Y` is the middle of a card.
+
+### The hand
+
+The shop offers its recruits and supplies as cards (`CARD_W`×`CARD_H`, 34×46) in one centred row:
+recruits, a gap, then supplies. `handX(n)` is the centre of the n-th card and moves as the row
+shrinks; `renderShop` eases each card toward it (`CX`, keyed by uid / item id). Units already in
+the army are not cards: they stand on slabs exactly as they do in battle.
+
+- `drawCard(o)` paints the face flat on a scratch canvas (`CARDC`) and blits it with the card's
+  tilt and squash, so a rotated card keeps hard pixels. Frame colour is the army colour, the art
+  window is `cardBg(army)` (that army's battlefield colours from `THEMES`), the corner coin is the
+  price, the tally under the name is the tier, and the stat badges are the battlefield ones.
+- Name and ability are DOM text: `cardLabels(list)` keeps one `.cd` element per card in `#hand`
+  and re-places it every frame with the same offset, tilt, scale and alpha as the canvas card.
+- A dragged card stays a card while the pointer is over the hand (`drag.card`) and turns into the
+  bare unit sprite or item icon once it is carried onto the field. `GHOST` holds the cards a roll
+  throws away while they fall off screen.
 
 ## Juice layer
 
@@ -75,8 +94,9 @@ while a battle is being skipped (`skipping()`) and respect `prefers-reduced-moti
   above the UI. Flags: `tw` twinkle, `wob` sway, `fade`, `drag`, `home` (seek a point).
 - **Shapes** (`FX`): `ring`, `spark`, `beam`, `flash`, shooting `star`. Timed on `G.time`.
 - **Camera**: `shake(magnitude, ms)` moves the whole `#stage`; `flash(colour, ms)` tints the screen.
-- **Slot animations**: `anim(id, kind, delay)` with kinds `drop`, `pop`, `land`, `hop`, `shake`,
-  keyed by unit `uid` or item `id`. `renderShop` reads them through `animOf(id)`.
+- **Slot and card animations**: `anim(id, kind, delay)` with kinds `deal` (a card sliding up into
+  the hand), `pop`, `land`, `hop`, `shake`, keyed by unit `uid` or item `id`. `renderShop` reads
+  them through `animOf(id)`, which returns an offset, a squash, an alpha and a tilt.
 - **Screen changes**: `go(fn)` runs a block wipe on `#fxc` and calls `fn` while the screen is
   covered. Input is ignored while `G.trans` is set. `clearStage()` resets per-screen state.
 - **Text**: `floater` (rising text), `splash(title, sub, cls, ms)` (centre-screen slam), `bump(id)`

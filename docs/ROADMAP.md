@@ -17,6 +17,10 @@ it by hand, so the things that only show up in motion are unverified:
 - **Transitions and the map walk** in a real browser (verified only by pumping frames by hand).
 - **Touch.** Tap-to-select and dragging on a real phone. There is no portrait layout; a phone in
   landscape gets a 2× scale with small text.
+- **The card hand.** The shop's cards (deal-in, the discard on a roll, the row re-centring after a
+  purchase, a dragged card turning into its unit above the hand) were checked frame by frame, never
+  in motion. Card names are DOM text placed over canvas cards each frame; whether the two stay
+  glued together at speed and on fractional scales is unknown.
 - **Other browsers.** Only Chrome was used. Safari and Firefox are untested.
 
 ## Known weak spots
