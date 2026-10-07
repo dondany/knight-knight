@@ -23,8 +23,8 @@ it by hand, so the things that only show up in motion are unverified:
   glued together at speed and on fractional scales is unknown.
 - **The reserve pile.** The flight onto the pile, the fan-out when it opens and dragging the top
   card straight off it were checked as still frames only. Whether 1 gold is the right price, and 4
-  the right size, has not been played. Rival bots never reserve, so the simulator says nothing
-  about its effect on balance.
+  the right size, has not been played. The twin tags on cards, the glow on the pile and the coin
+  that bobs over it with 1 or 2 gold left were also checked as stills only.
 - **Other browsers.** Only Chrome was used. Safari and Firefox are untested.
 
 ## Known weak spots
@@ -33,6 +33,9 @@ it by hand, so the things that only show up in motion are unverified:
   nothing but Peasants. It works (and merges come fast) but the first expedition has little choice.
 - **Each expedition starts from scratch.** The only things carried between regions are the armies
   and +1 starting gold per land. A persistent army, relics or upgrades could give more of a campaign.
+- **Story got easier with the reserve.** Once the bots learned to reserve, every region's conquest
+  rate rose (see `docs/DESIGN.md`). Sparta (87%) and Egypt (77%) are about 7 points above their
+  target bands and Norse and Rome sit on the top edge. Nothing has been retuned yet.
 - **Region difficulty** now falls with the danger rating by the bot's measure, but tuning is very
   sensitive: one rival gold can swing a region from 25% to 90%, and any buff to a tier-1 unit
   brings the champion a turn earlier. Thebes and Sparta sit on the edge of their bands.

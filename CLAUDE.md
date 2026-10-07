@@ -43,6 +43,7 @@ simulator; change how it looks in the matching `PLAY` handler.
 ```sh
 tools/sim.py                       # 2,100 bot-vs-bot battles: crashes, draw rate, win rate per army
 tools/sim.py tools/story.js        # story difficulty: bot conquest rate and champion win rate per region
+tools/sim.py tools/reserve.js      # what the reserve is worth: reserving bots against bots that never do
 tools/sim.py tools/units.js        # regenerate the unit/item tables for docs/DESIGN.md
 tools/guide.py                     # regenerate docs/index.html (the public field guide)
 tools/embed_sprite.py              # re-embed characters.PNG after editing the art

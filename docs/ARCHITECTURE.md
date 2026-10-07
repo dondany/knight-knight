@@ -31,7 +31,7 @@ Everything lives in `index.html`: a `<style>` block, the DOM overlay markup, and
 | `synergies(units)` | `{army: {n, w, lvl}}`; each mercenary adds 1 to every army that already has 2 real members (`w` = wilds counted) |
 | `newPlayer(opts)`, `tierOf`, `startTurn`, `refill`, `rollShop`, `reserveCard`, `discardReserve`, `buyUnit`, `sellUnit`, `moveUnit`, `mergeInto`, `levelUp`, `useItem`, `endTurn` | Shop-phase actions on a player state `P` |
 | `simulateBattle(teamA, teamB, seed)` | Deterministic battle; returns `{ev, result, rounds}` |
-| `botShop`, `arrange`, `makeOpponent(turn, rng, foe)` | Greedy bot that drafts through the same shop; `foe` restricts and tunes it |
+| `botShop`, `botReserve`, `arrange`, `makeOpponent(turn, rng, foe)` | Greedy bot that drafts through the same shop and uses the reserve with its leftover gold; `foe` restricts and tunes it (`noRes` switches the reserve off) |
 | `REGIONS`, `ROUTES`, `storyRun`, `storyFoe`, `storyOpen`, `storyPath` | Story mode data and helpers |
 
 Player state `P`: `{gold, turn, lives, goal, wins, team[5], shop[], items[], reserve[], fx[]}` plus the run
@@ -93,6 +93,11 @@ the army are not cards: they stand on slabs exactly as they do in battle.
   `{type:'res', i}`; pressing the closed pile takes hold of its top card, so a drag plays it and a
   plain click opens the pile. Dropping a hand card on the pile calls `act(src, {type:'pile'})`,
   which puts it in `FLY` for its flight and ends in `stowLand()`.
+- **Hints.** `drawCard` takes `twin`: `'army'` draws a gold arrow tag (the card would merge with a
+  unit in the army), `'res'` a blue stack tag (its twin is in the reserve). `renderShop` works these
+  out each frame, glows the pile (or the matching cards when it is open) while the shop offers the
+  twin of a reserved unit, and bobs a coin over the pile when gold is at least `RESERVE_COST` but
+  below `COST`. `refreshInfo` says the same in words.
 
 ## Juice layer
 
@@ -238,6 +243,8 @@ simulator for battle effects).
 
 - `tools/sim.py` runs bot-vs-bot battles and reports crashes, draw rate, win rate by army, bot
   strength by turn, and any ability that never fired.
+- `tools/sim.py tools/reserve.js` pits bots that reserve against bots that never do and counts how
+  the pile gets used.
 - `tools/sim.py tools/story.js` has a bot play every region's expedition and reports how often it
   conquers the region and how often it beats the champion.
 - `tools/shot.sh` takes headless Chrome screenshots. `#demo=` hashes jump straight to a screen

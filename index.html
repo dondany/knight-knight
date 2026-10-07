@@ -400,7 +400,7 @@ function synergies(units){
 const tierOf = P => Math.min(6, P.fast ? P.turn : Math.floor((P.turn+1)/2));
 const shopSize = T => T>=5?5:T>=3?4:3;
 const itemSlots = T => T>=3?2:1;
-function newPlayer(o){ o=o||{}; return {gold:10,turn:1,lives:o.lives||LIVES,goal:o.goal||WINS,wins:0,team:[null,null,null,null,null],shop:[],items:[],reserve:[],fx:[],pool:o.pool||null,fast:!!o.fast,bonus:o.bonus||0,story:o.story||null,cap:o.cap||5}; }
+function newPlayer(o){ o=o||{}; return {gold:10,turn:1,lives:o.lives||LIVES,goal:o.goal||WINS,wins:0,team:[null,null,null,null,null],shop:[],items:[],reserve:[],fx:[],pool:o.pool||null,fast:!!o.fast,bonus:o.bonus||0,story:o.story||null,cap:o.cap||5,noRes:!!o.noRes}; }
 function canMerge(a,b){return a&&b&&a!==b&&a.key===b.key&&lvlOf(a)<3}
 
 function refill(P,rng){
@@ -582,34 +582,51 @@ function arrange(P){
   const us=P.team.filter(Boolean).sort((a,b)=>UNITS[a.key].pos-UNITS[b.key].pos||b.hp-a.hp);
   P.team=[0,1,2,3,4].map(i=>us[i]||null);
 }
+// With gold left that cannot buy a card, the bot sets aside the shop card it would most like to see again:
+// a twin of something it fields, the second half of a pair it is collecting, or a strong favoured unit.
+function botReserve(P,fav){
+  if(P.gold<RESERVE_COST||P.reserve.length>=RESERVE_MAX) return false;
+  const T=tierOf(P); let best=-1, bs=5, list=null; const want=(sc,i,L)=>{ if(sc>bs){ bs=sc; best=i; list=L; } };
+  P.shop.forEach((s,i)=>{ const d=UNITS[s.u.key];
+    want(P.team.some(x=>canMerge(x,s.u))?10+d.tier:P.reserve.some(r=>r.u&&r.u.key===s.u.key)?7:(d.faction===fav||d.faction==='merc')&&d.tier>=T-1?4+d.tier*.5:0,i,P.shop); });
+  P.items.forEach((s,i)=>{ const it=ITEMS[s.item]; want(it.gear&&P.team.some(x=>x&&!x.gear)?4+it.tier*.5:s.item==='manual'?6:0,i,P.items); });
+  return best>=0&&reserveCard(P,list,best);
+}
+// `P.noRes` switches the reserve off for this bot (tools/reserve.js compares the two).
 function botShop(P,rng,fav){
-  let guard=0;
+  let guard=0; const res=P.noRes?[]:P.reserve;
+  // a reserved unit that fell two tiers behind without finding its twin is not coming out again
+  for(let i=res.length-1;i>=0;i--){ const s=res[i]; if(s.u&&UNITS[s.u.key].tier<tierOf(P)-2&&!P.team.some(x=>canMerge(x,s.u))) discardReserve(P,i); }
   while(guard++<80){
     let best=null; const consider=c=>{if(!best||c.sc>best.sc)best=c};
     if(P.gold>=COST){
-      P.shop.forEach((s,i)=>{
-        const d=UNITS[s.u.key], base=d.tier*2+(d.faction===fav||d.faction==='merc'?5:0)+rng()*2;
+      const unit=(s,i,from)=>{
+        const d=UNITS[s.u.key], base=d.tier*2+(d.faction===fav||d.faction==='merc'?5:0)+rng()*2+(from===P.shop?0:1);
         const dup=P.team.findIndex(x=>canMerge(x,s.u)), empty=P.team.filter(Boolean).length<P.cap?P.team.indexOf(null):-1;
-        if(dup>=0) consider({k:'buy',i,slot:dup,sc:base+5});
-        else if(empty>=0) consider({k:'buy',i,slot:empty,sc:base+4});
+        if(dup>=0) consider({k:'buy',i,from,slot:dup,sc:base+5});
+        else if(empty>=0) consider({k:'buy',i,from,slot:empty,sc:base+4});
         else{
           let w=-1,wv=1e9; P.team.forEach((x,j)=>{if(!x)return;const v=unitValue(x,fav);if(v<wv){wv=v;w=j}});
-          const nv=unitValue(s.u,fav); if(nv>wv+1) consider({k:'swap',i,slot:w,sc:base+(nv-wv)*.5});
+          const nv=unitValue(s.u,fav); if(nv>wv+1) consider({k:'swap',i,from,slot:w,sc:base+(nv-wv)*.5});
         }
-      });
-      if(P.team.filter(Boolean).length>=3) P.items.forEach((s,i)=>{
+      };
+      const item=(s,i,from)=>{
         const it=ITEMS[s.item]; let slot=-1,sc=3,bv=-1;
         if(it.gear){ P.team.forEach((x,j)=>{if(x&&!x.gear&&x.atk+x.hp>bv){bv=x.atk+x.hp;slot=j}}); sc=5+it.tier; }
         else if(s.item==='manual'){ P.team.forEach((x,j)=>{if(x&&lvlOf(x)<3&&x.xp*10+x.atk+x.hp>bv){bv=x.xp*10+x.atk+x.hp;slot=j}}); sc=6; }
         else if(s.item==='feast'){ slot=P.team.findIndex(Boolean); sc=7; }
         else slot=rng.pick(P.team.map((x,j)=>x?j:-1).filter(j=>j>=0));
-        if(slot>=0) consider({k:'item',i,slot,sc:sc+rng()});
-      });
+        if(slot>=0) consider({k:'item',i,from,slot,sc:sc+rng()});
+      };
+      const some=P.team.filter(Boolean).length>=3;
+      P.shop.forEach((s,i)=>unit(s,i,P.shop)); if(some) P.items.forEach((s,i)=>item(s,i,P.items));
+      res.forEach((s,i)=>{ if(s.u) unit(s,i,res); else if(some) item(s,i,res); });
     }
     if(best){
-      if(best.k==='item') useItem(P,best.i,best.slot,rng);
-      else{ if(best.k==='swap') sellUnit(P,best.slot,rng); buyUnit(P,best.i,best.slot,rng); }
-    } else if(!rollShop(P,rng)) break;
+      if(best.k==='item') useItem(P,best.i,best.slot,rng,best.from);
+      else{ if(best.k==='swap') sellUnit(P,best.slot,rng); buyUnit(P,best.i,best.slot,rng,best.from); }
+    } else if(!P.noRes&&P.gold<COST&&botReserve(P,fav)){}
+    else if(!rollShop(P,rng)) break;
     P.fx.length=0;
   }
   arrange(P);
@@ -623,10 +640,10 @@ const ARMY_NAMES = {
   japan:['Crane Clan','Moonlit Blades','Tiger Shogunate','The Forty-Seven'],
   merc:['The Free Company','Caravan Guard','Blades for Hire','The Coin Brothers'],
 };
-// foe (optional): {fav, pool, fast, cap (army size), gold (delta per turn), boss:{key,name,bonus}}
+// foe (optional): {fav, pool, fast, cap (army size), gold (delta per turn), noRes (never reserve), boss:{key,name,bonus}}
 function makeOpponent(turn,rng,foe){
   foe=foe||{};
-  const fav=foe.fav||rng.pick(REAL_F), P=newPlayer({pool:foe.pool,fast:foe.fast,cap:foe.cap}), waste=foe.gold!=null?-foe.gold:rng.int(3);
+  const fav=foe.fav||rng.pick(REAL_F), P=newPlayer({pool:foe.pool,fast:foe.fast,cap:foe.cap,noRes:foe.noRes}), waste=foe.gold!=null?-foe.gold:rng.int(3);
   for(let t=1;t<=turn;t++){ P.turn=t; startTurn(P,rng); P.gold=Math.max(3,P.gold-waste); botShop(P,rng,fav); endTurn(P,rng); P.fx.length=0; }
   // name the army after whatever it actually ended up fielding
   const n={}; P.team.forEach(u=>{ if(u){ const f=UNITS[u.key].faction; if(f!=='merc') n[f]=(n[f]||0)+1; } });
@@ -1000,7 +1017,7 @@ function cardBg(f){
   }
   return CARD_BG[f]=c;
 }
-// A shop card around its centre. o: {x,y,e (shop entry),rot,sx,sy,alpha,dim,glow}
+// A shop card around its centre. o: {x,y,e (shop entry),rot,sx,sy,alpha,dim,glow,twin ('army'|'res')}
 // The face is painted flat on a scratch canvas and then blitted, so a tilted or squashed card keeps hard pixels.
 // Card rows: 0 outline, 1 frame, 3-22 art, 24-42 parchment (name and ability are DOM text, see cardLabels), 44 frame.
 const CARDC=mkCanvas(CARD_W+4,CARD_H+6), cg=CARDC.getContext('2d');
@@ -1023,6 +1040,12 @@ function drawCard(o){
   R(1,0,5,7,'#de9e41'); R(0,1,7,5,'#de9e41'); R(1,0,4,6,'#e8c170'); R(0,1,6,4,'#e8c170');
   digits(COST,4,3,o.dim?'#a53030':'#602c2c',cg);
   if(o.dim) R(1,1,32,44,'rgba(9,10,20,.42)');
+  // twin tag: gold arrow = buying it merges with a unit you field, blue stack = its twin waits in the reserve
+  if(o.twin){
+    R(28,-1,5,9,'#090a14'); R(27,0,7,7,'#090a14'); R(26,1,9,5,'#090a14');
+    const c=o.twin==='army'?'#e8c170':'#73bed3', k=o.twin==='army'?'#602c2c':'#172038'; R(28,0,5,7,c); R(27,1,7,5,c);
+    if(o.twin==='army'){ R(30,1,1,5,k); R(29,2,3,1,k); R(28,3,5,1,k); } else { R(28,2,5,1,k); R(28,4,5,1,k); }
+  }
   g.save(); g.translate(Math.round(o.x),Math.round(o.y)); if(o.rot) g.rotate(o.rot); g.scale(o.sx||1,o.sy||1);
   g.globalAlpha=o.alpha==null?1:Math.max(0,Math.min(1,o.alpha));
   g.drawImage(CARDC,-CARD_W/2-2,-CARD_H/2-2);
@@ -1080,10 +1103,16 @@ function renderShop(){
   // R.o runs from 0 (the hand is showing) to 1 (the reserve is spread out in its place)
   R.o=G.demo||CALM?+R.open:Math.max(0,Math.min(1,R.o+(R.open?dt:-dt)/260));
   if(R.o>0){ g.fillStyle=`rgba(9,10,20,${(.5*R.o).toFixed(2)})`; g.fillRect(HAND_L-3,HAND_Y-27,W,54); g.globalAlpha=R.o; g.fillStyle='#4f8fba'; g.fillRect(HAND_L-3,HAND_Y-28,W,1); g.fillRect(HAND_L-3,HAND_Y+27,W,1); g.globalAlpha=1; }
+  // twins: what a card would merge with. `pileTwin` = the shop is offering the twin of something in the reserve.
+  const inTeam=u=>P.team.some(t=>canMerge(t,u)), twinOf=u=>inTeam(u)?'army':P.reserve.some(r=>r.u&&r.u!==u&&r.u.key===u.key)?'res':null;
+  const onOffer=e=>!!e.u&&P.shop.some(s=>s.u.key===e.u.key), pileTwin=P.reserve.some(onOffer);
   // the pile's place: a drop target for cards from the hand
   const canStow=dragging&&(dragging.src.type==='shop'||dragging.src.type==='item')&&P.gold>=RESERVE_COST&&nr<RESERVE_MAX;
-  tray(canStow?(blink?'#e8c170':'#de9e41'):same(G.hover,{type:'pile',i:0})?'#a8b5b2':'#577277');
+  // gold left that cannot buy a card can still reserve one: a coin bobs over the pile to say so
+  const nudge=!dragging&&!R.open&&!G.busy&&P.gold>=RESERVE_COST&&P.gold<COST&&nr<RESERVE_MAX&&P.shop.length+P.items.length>0;
+  tray(canStow||(nudge&&blink)?(blink?'#e8c170':'#de9e41'):same(G.hover,{type:'pile',i:0})?'#a8b5b2':'#577277');
   if(canStow) arrowDown(PILE_X,HAND_Y-36,'#e8c170');
+  if(nudge){ const b=(G.time/180|0)%2; g.drawImage(ICON.coin,PILE_X-4,HAND_Y-47+b); arrowDown(PILE_X,HAND_Y-36,'#e8c170'); }
   // the hand: cards slide to their place as the row re-centres, lift on hover and when selected, and duck away while the reserve is open
   const cards=[...P.shop.map((s,j)=>({s,id:s.u.uid,h:{type:'shop',i:j}})),...P.items.map((s,k)=>({s,id:s.id,h:{type:'item',i:k}}))];
   for(const id of CX.keys()) if(!cards.some(c=>c.id===id)) CX.delete(id);
@@ -1092,7 +1121,7 @@ function renderShop(){
     if(R.o>=1) return;
     if(dragging&&same(dragging.src,c.h)){ g.fillStyle='rgba(9,10,20,.3)'; g.fillRect(rx-16,HAND_Y-22,32,44); return; }
     const q=Math.max(0,Math.min(1,R.o*1.6-n*.08)), hv=same(G.hover,c.h)&&!dragging, sel=same(G.sel,c.h), a=animOf(c.id), y=HAND_Y-(sel?4:hv?2:0)+q*q*74;
-    const o={x:x+a.dx,y:y+a.dy,e:c.s,rot:a.rot+q*.25*(n%2?1:-1),sx:a.sx,sy:a.sy,alpha:a.al,dim,glow:c.s.bonus&&blink?'#e8c170':null};
+    const o={x:x+a.dx,y:y+a.dy,e:c.s,rot:a.rot+q*.25*(n%2?1:-1),sx:a.sx,sy:a.sy,alpha:a.al,dim,glow:c.s.bonus&&blink?'#e8c170':null,twin:c.s.u&&twinOf(c.s.u)};
     if(a.al>=1&&!a.rot&&!R.o){ g.fillStyle='rgba(9,10,20,.4)'; g.fillRect(rx-15,HAND_Y-21+Math.max(0,a.dy),34,46); }
     drawCard(o); labels.push(o);
     if(c.s.bonus&&!R.o&&Math.random()<.08) sparkle(x,y-18,'#e8c170',1);
@@ -1106,11 +1135,12 @@ function renderShop(){
     if(away(e,i)) return;
     const q=Math.max(0,Math.min(1,R.o*(1+.18*(nr-1))-back*.18)), k=outBack(q), hv=same(G.hover,h)&&!dragging&&q>=1, sel=same(G.sel,h);
     const px=PILE_X-back*2, py=HAND_Y-back*2, x=px+(resX(i)-px)*k, y=py+(HAND_Y-py)*k-Math.sin(q*Math.PI)*12-(sel?4:hv?2:0), a=animOf(idOf(e));
-    const o={x:x+a.dx+(q?0:pa.dx),y:y+a.dy,e,rot:(1-q)*(q?-.5:0),sx:a.sx*(q?1:pa.sx),sy:a.sy*(q?1:pa.sy),dim};
+    const o={x:x+a.dx+(q?0:pa.dx),y:y+a.dy,e,rot:(1-q)*(q?-.5:0),sx:a.sx*(q?1:pa.sx),sy:a.sy*(q?1:pa.sy),dim,twin:e.u&&inTeam(e.u)?'army':null,glow:blink&&(q?onOffer(e):pileTwin&&i===top)?'#e8c170':null};
     if(q>=1){ g.fillStyle='rgba(9,10,20,.4)'; g.fillRect(Math.round(x)-15,HAND_Y-21,34,46); }
     drawCard(o); if(q>.5||i===top) labels.push(o);
     if(sel){ const b=(G.time/250|0)%2, rx=Math.round(x); corners(rx-19-b,rx+18+b,y-25-b,y+24+b); }
   });
+  if(pileTwin&&!R.o&&Math.random()<.06) sparkle(PILE_X,HAND_Y-16,'#e8c170',1);
   if(nr&&R.o<.2&&!FLY.length) badge(PILE_X+18,HAND_Y-24,nr,nr>=RESERVE_MAX?'#a53030':'#3c5e8b',true);
   // cards thrown away by a roll
   for(let i=GHOST.length-1;i>=0;i--){ const q=GHOST[i], p=(G.time-q.t0)/240; if(p>=1){ GHOST.splice(i,1); continue; } if(p<0) continue;
@@ -1350,7 +1380,9 @@ function refreshInfo(){
     if(h.type==='faction') html=factionInfo(h.i,(synergies(P.team)[h.i]||{n:0}).n);
     else if(e&&h.type==='team') html=unitInfo(e,`Sells for ${lvlOf(e)} gold.`);
     else if(h.type==='pile') html=`<div class="nm"><span>Reserve</span><span class="lv">${P.reserve.length}/${RESERVE_MAX}</span></div><div class="ab">Set a card aside for <b>${RESERVE_COST}</b> gold. It waits here through rolls and turns, and still costs <b>${COST}</b> when you play it.</div><div class="hint">Drag a card here to reserve it. Click the pile to look through it, or to discard a card you no longer want.</div>`;
-    else if(e&&(h.type==='shop'||h.type==='item'||h.type==='res')){ const cost=h.type==='res'?`In reserve. Costs ${COST} gold to play. Select it to discard it.`:`Costs ${COST} gold, or ${RESERVE_COST} to reserve.`, it=ITEMS[e.item];
+    else if(e&&(h.type==='shop'||h.type==='item'||h.type==='res')){ const mate=e.u&&P.team.find(t=>canMerge(t,e.u)), it=ITEMS[e.item];
+      const twin=mate?` Merges with your ${UNITS[mate.key].name}.`:!e.u?'':h.type==='res'?(P.shop.some(s=>s.u.key===e.u.key)?' The shop is offering its twin.':''):P.reserve.some(r=>r.u&&r.u.key===e.u.key)?' Its twin is in your reserve.':'';
+      const cost=(h.type==='res'?`In reserve. Costs ${COST} gold to play. Select it to discard it.`:`Costs ${COST} gold, or ${RESERVE_COST} to reserve.`)+twin;
       html=e.u?unitInfo(e.u,cost):`<div class="nm"><span>${it.name}</span></div><div class="sub">${it.gear?'Gear':'Supply'} · Tier ${it.tier}</div><div class="ab">${it.text}</div><div class="hint">${cost} ${it.noTarget?'Drop it on your army.':'Drop it on a unit.'}${it.gear?' A unit holds one piece of gear.':''}</div>`; }
   } else if(G.screen==='battle'&&h&&h.type==='bunit'){ const u=view(h.i); if(u) html=unitInfo(u); }
   $('info').innerHTML=html; show('info',!!html); $('info').classList.toggle('battle',G.screen==='battle');
@@ -1669,7 +1701,7 @@ function help(){
   modal(`<h2>How to Play</h2><ul>
 <li><b>Recruit.</b> You get 10 gold a turn. Drag a card from your hand onto your line: units and supplies cost ${COST}, and a fresh hand costs 1.</li>
 <li><b>Arrange.</b> Drag units to reorder them. The <b>front</b> of your line is on the right and fights first.</li>
-<li><b>Merge.</b> Drop a unit on its twin to combine them. Three copies make level 2, six make level 3, and abilities grow with each level.</li>
+<li><b>Merge.</b> Drop a unit on its twin to combine them. Three copies make level 2, six make level 3, and abilities grow with each level. A gold arrow on a card means it would merge with a unit you field; a blue mark means its twin is waiting in your reserve.</li>
 <li><b>Armies.</b> Field 2 or 4 units from the same army to switch on its bonus. Mercenaries count toward every army you already field 2 of.</li>
 <li><b>Story.</b> Start with the Medieval army and march across the map. Win a land's battles and beat its champion to add its army to your recruits.</li>
 <li><b>Skirmish.</b> Every army from the start. Win ${WINS} battles before you lose ${LIVES} lives.</li>
