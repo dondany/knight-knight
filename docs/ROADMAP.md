@@ -40,6 +40,11 @@ it by hand, so the things that only show up in motion are unverified:
   about 12% of battles and cost nothing.
 - **Late skirmish.** Bot armies plateau around tier 4 and level 1.7 by turn 14.
 - **Unit names and abilities** were assigned by looking at each sprite. Some are guesses.
+- **The Mercenaries are really Gauls.** The artist drew row 6 as a Gaulish army and has made two of
+  its five sprites so far. The game guessed "Mercenaries" (Sellsword, Barbarian, a land at Samarkand
+  with yurts). Decided so far: they stay Wild, and `docs/ideas.html` and `docs/art-refs.html` now
+  propose the three missing units as Gauls (Carnyx Player, Druid, Chieftain). Not done: renaming
+  the army, the two units and the champion in the game, and moving their land west on the map.
 - **The world map** is a rough hand-drawn polygon set. Sparta and Rome sit close together.
 - **Item variety** is thin (7 items), and every unit costs the same regardless of tier.
 - **Local art edits** need `tools/embed_sprite.py` to show up when opening the file from disk.
