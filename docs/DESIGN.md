@@ -53,8 +53,14 @@ army. Conquering all six ends the story.
 | 9–10 | 5 | 1–5 | 5 | 2 |
 | 11+ | 6+ | 1–6 | 5 | 2 |
 
-Recruits and items are drawn uniformly from everything unlocked. Frozen entries survive rerolls
-and turn changes.
+Recruits and items are drawn uniformly from everything unlocked. A roll or a new turn replaces the
+whole shop.
+
+**The reserve.** For 1 gold a card (recruit or item) can be set aside on the reserve pile, which
+holds up to 4. Reserved cards survive rolls and turn changes, and still cost the usual 3 gold when
+played, so a card that waits a turn costs 4 in all. A reserved card can be
+discarded to free its place, but the gold is not returned and it cannot go back to the shop. The reserve replaced freezing, which was free but kept the card in a shop slot. Rival bots
+do not use it. The numbers are `RESERVE_COST` and `RESERVE_MAX`.
 
 ## Merging and levels
 

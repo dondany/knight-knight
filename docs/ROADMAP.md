@@ -21,6 +21,10 @@ it by hand, so the things that only show up in motion are unverified:
   purchase, a dragged card turning into its unit above the hand) were checked frame by frame, never
   in motion. Card names are DOM text placed over canvas cards each frame; whether the two stay
   glued together at speed and on fractional scales is unknown.
+- **The reserve pile.** The flight onto the pile, the fan-out when it opens and dragging the top
+  card straight off it were checked as still frames only. Whether 1 gold is the right price, and 4
+  the right size, has not been played. Rival bots never reserve, so the simulator says nothing
+  about its effect on balance.
 - **Other browsers.** Only Chrome was used. Safari and Firefox are untested.
 
 ## Known weak spots

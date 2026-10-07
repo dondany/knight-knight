@@ -29,17 +29,18 @@ Everything lives in `index.html`: a `<style>` block, the DOM overlay markup, and
 | `def(...)` / `UNITS` | Unit table. One `def` call per unit |
 | `ITEMS` | Supplies and gear |
 | `synergies(units)` | `{army: {n, w, lvl}}`; each mercenary adds 1 to every army that already has 2 real members (`w` = wilds counted) |
-| `newPlayer(opts)`, `tierOf`, `startTurn`, `refill`, `rollShop`, `buyUnit`, `sellUnit`, `moveUnit`, `mergeInto`, `levelUp`, `useItem`, `endTurn` | Shop-phase actions on a player state `P` |
+| `newPlayer(opts)`, `tierOf`, `startTurn`, `refill`, `rollShop`, `reserveCard`, `discardReserve`, `buyUnit`, `sellUnit`, `moveUnit`, `mergeInto`, `levelUp`, `useItem`, `endTurn` | Shop-phase actions on a player state `P` |
 | `simulateBattle(teamA, teamB, seed)` | Deterministic battle; returns `{ev, result, rounds}` |
 | `botShop`, `arrange`, `makeOpponent(turn, rng, foe)` | Greedy bot that drafts through the same shop; `foe` restricts and tunes it |
 | `REGIONS`, `ROUTES`, `storyRun`, `storyFoe`, `storyOpen`, `storyPath` | Story mode data and helpers |
 
-Player state `P`: `{gold, turn, lives, goal, wins, team[5], shop[], items[], fx[]}` plus the run
+Player state `P`: `{gold, turn, lives, goal, wins, team[5], shop[], items[], reserve[], fx[]}` plus the run
 options `pool` (unit keys on offer, `null` = all), `fast` (a new tier every turn instead of every
 two), `bonus` (extra gold on turn 1), `cap` (army size, used by rival bots) and `story` (region id).
 `team[0]` is the **front**. Unit instance: `{uid, key, atk, hp, xp, gear}`; level comes from
-`lvlOf(u)` (xp 0–1 → 1, 2–4 → 2, 5 → 3). Shop entries are `{u, frozen, bonus?}` and
-`{item, frozen}`. Shop actions push `{k:'buff'|'gold'|'level'|'text', …}` records onto `P.fx`; the
+`lvlOf(u)` (xp 0–1 → 1, 2–4 → 2, 5 → 3). Shop entries are `{u, bonus?}` and
+`{item, id}`; `reserve[]` holds the same entries, moved there by `reserveCard`, and `buyUnit` /
+`useItem` take the list a card is played from as their last argument. Shop actions push `{k:'buff'|'gold'|'level'|'text', …}` records onto `P.fx`; the
 view drains them with `flushFx()` to show floating text.
 
 ### View (everything after the LOGIC region)
@@ -69,9 +70,10 @@ stand, `HAND_Y` is the middle of a card.
 
 ### The hand
 
-The shop offers its recruits and supplies as cards (`CARD_W`×`CARD_H`, 34×46) in one centred row:
-recruits, a gap, then supplies. `handX(n)` is the centre of the n-th card and moves as the row
-shrinks; `renderShop` eases each card toward it (`CX`, keyed by uid / item id). Units already in
+The shop offers its recruits and supplies as cards (`CARD_W`×`CARD_H`, 34×46) in one row: the
+reserve pile at `PILE_X`, then recruits, a gap and supplies, centred in the space to its right
+(`rowX`; the pitch tightens when eight cards have to fit). `handX(n)` is the centre of the n-th
+card and moves as the row shrinks; `renderShop` eases each card toward it (`CX`, keyed by uid / item id). Units already in
 the army are not cards: they stand on slabs exactly as they do in battle.
 
 - `drawCard(o)` paints the face flat on a scratch canvas (`CARDC`) and blits it with the card's
@@ -85,6 +87,12 @@ the army are not cards: they stand on slabs exactly as they do in battle.
 - A dragged card stays a card while the pointer is over the hand (`drag.card`) and turns into the
   bare unit sprite or item icon once it is carried onto the field. `GHOST` holds the cards a roll
   throws away while they fall off screen.
+- **The reserve pile.** `G.res = {open, o}`: `o` eases between 0 (hand showing, reserve stacked on
+  the pile with a count badge) and 1 (hand ducked below the screen, reserve dealt out along the
+  row at `resX(i)`). `togglePile()` flips it. Input entities are `{type:'pile'}` and
+  `{type:'res', i}`; pressing the closed pile takes hold of its top card, so a drag plays it and a
+  plain click opens the pile. Dropping a hand card on the pile calls `act(src, {type:'pile'})`,
+  which puts it in `FLY` for its flight and ends in `stowLand()`.
 
 ## Juice layer
 

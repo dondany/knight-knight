@@ -82,6 +82,8 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
 .lbl{font-size:max(9px,calc(var(--u)*5));color:#a8b5b2;text-shadow:0 calc(var(--u)*.75) 0 #090a14;white-space:nowrap}
 #lblFront{transform:translateX(-50%);color:#e8c170}
 #lblShop{left:calc(var(--u)*60);top:calc(var(--u)*167)}
+#lblShop.res{color:#73bed3}
+#lblPile{left:calc(var(--u)*24);top:calc(var(--u)*133);transform:translateX(-50%);color:#819796}
 #hand{inset:0}
 .cd{position:absolute;width:calc(var(--u)*28);text-align:center;line-height:1;white-space:nowrap;overflow:hidden;color:#241527;transform-origin:calc(var(--u)*14) calc(var(--u)*-2)}
 .cd b{display:block;font-weight:400;font-size:calc(var(--u)*5.4)}
@@ -232,6 +234,7 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
     <div id="info" class="hide"></div>
     <div id="lblFront" class="lbl hide">FRONT</div>
     <div id="lblShop" class="lbl hide"></div>
+    <div id="lblPile" class="lbl hide"></div>
     <div id="hand" class="hide"></div>
     <div id="sellzone" class="hide"></div>
     <div id="shopbar" class="hide">
@@ -264,7 +267,7 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
 'use strict';
 //#region LOGIC ============================================================
 // Pure game rules: no DOM in this region (it is also run headless for balance sims).
-const CAP = 50, COST = 3, LIVES = 5, WINS = 10;
+const CAP = 50, COST = 3, LIVES = 5, WINS = 10, RESERVE_COST = 1, RESERVE_MAX = 4;
 
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function makeRng(seed){
@@ -397,14 +400,14 @@ function synergies(units){
 const tierOf = P => Math.min(6, P.fast ? P.turn : Math.floor((P.turn+1)/2));
 const shopSize = T => T>=5?5:T>=3?4:3;
 const itemSlots = T => T>=3?2:1;
-function newPlayer(o){ o=o||{}; return {gold:10,turn:1,lives:o.lives||LIVES,goal:o.goal||WINS,wins:0,team:[null,null,null,null,null],shop:[],items:[],fx:[],pool:o.pool||null,fast:!!o.fast,bonus:o.bonus||0,story:o.story||null,cap:o.cap||5}; }
+function newPlayer(o){ o=o||{}; return {gold:10,turn:1,lives:o.lives||LIVES,goal:o.goal||WINS,wins:0,team:[null,null,null,null,null],shop:[],items:[],reserve:[],fx:[],pool:o.pool||null,fast:!!o.fast,bonus:o.bonus||0,story:o.story||null,cap:o.cap||5}; }
 function canMerge(a,b){return a&&b&&a!==b&&a.key===b.key&&lvlOf(a)<3}
 
 function refill(P,rng){
   const T=tierOf(P), all=P.pool||UNIT_KEYS, ipool=ITEM_KEYS.filter(k=>ITEMS[k].tier<=T);
   let pool=all.filter(k=>UNITS[k].tier<=T); if(!pool.length) pool=all;
-  P.shop=P.shop.filter(s=>s.frozen); while(P.shop.length<shopSize(T)) P.shop.push({u:mkUnit(rng.pick(pool)),frozen:false});
-  P.items=P.items.filter(s=>s.frozen); while(P.items.length<itemSlots(T)) P.items.push({item:rng.pick(ipool),frozen:false,id:UID++});
+  P.shop=[]; while(P.shop.length<shopSize(T)) P.shop.push({u:mkUnit(rng.pick(pool))});
+  P.items=[]; while(P.items.length<itemSlots(T)) P.items.push({item:rng.pick(ipool),id:UID++});
 }
 function startTurn(P,rng){
   const s=synergies(P.team).medieval, tithe=[0,1,3][s?s.lvl:0], tribute=P.turn===1?P.bonus||0:0;
@@ -414,12 +417,20 @@ function startTurn(P,rng){
   refill(P,rng);
 }
 function rollShop(P,rng){ if(P.gold<1) return false; P.gold--; refill(P,rng); return true; }
+// The reserve: pay a gold to set a card from the shop (`list` is P.shop or P.items) aside. Rolls and new
+// turns leave it alone, and it still costs its full price when it is finally played.
+function reserveCard(P,list,i){
+  const e=list[i]; if(!e||P.gold<RESERVE_COST||P.reserve.length>=RESERVE_MAX) return false;
+  P.gold-=RESERVE_COST; list.splice(i,1); delete e.bonus; delete e.seen; P.reserve.push(e); return true;
+}
+// Throwing a reserved card away frees its place. The gold paid to reserve it is not returned.
+function discardReserve(P,i){ if(!P.reserve[i]) return false; P.reserve.splice(i,1); return true; }
 function levelUp(P,t,rng){
   P.fx.push({k:'level',uid:t.uid});
   if(P.shop.length<6){
     // bonus recruit from the next tier up (or the best the pool has, when an army skips that tier)
     const T=Math.min(6,tierOf(P)+1), all=(P.pool||UNIT_KEYS).filter(k=>UNITS[k].tier<=T), top=Math.max(...all.map(k=>UNITS[k].tier));
-    P.shop.push({u:mkUnit(rng.pick(all.filter(k=>UNITS[k].tier===top))),frozen:false,bonus:true});
+    P.shop.push({u:mkUnit(rng.pick(all.filter(k=>UNITS[k].tier===top))),bonus:true});
   }
 }
 function mergeInto(P,t,inc,rng){
@@ -437,11 +448,12 @@ function makeRoom(P,slot){
   t[slot]=null; return true;
 }
 function canBuyInto(P,u,slot){ return canMerge(P.team[slot],u) || P.team.includes(null); }
-function buyUnit(P,si,slot,rng){
-  const s=P.shop[si]; if(!s||P.gold<COST) return null;
+// `from` is the list the card sits in: the shop by default, P.reserve for a card played from the reserve
+function buyUnit(P,si,slot,rng,from){
+  const L=from||P.shop, s=L[si]; if(!s||!s.u||P.gold<COST) return null;
   const u=s.u, t=P.team[slot]; let res;
-  if(canMerge(t,u)){ P.gold-=COST; P.shop.splice(si,1); mergeInto(P,t,u,rng); res=t; }
-  else{ if(!makeRoom(P,slot)) return null; P.gold-=COST; P.shop.splice(si,1); P.team[slot]=u; res=u; }
+  if(canMerge(t,u)){ P.gold-=COST; L.splice(si,1); mergeInto(P,t,u,rng); res=t; }
+  else{ if(!makeRoom(P,slot)) return null; P.gold-=COST; L.splice(si,1); P.team[slot]=u; res=u; }
   const h=UNITS[res.key].shop; if(h&&h.buy) h.buy(res,P,rng);
   return res;
 }
@@ -462,14 +474,14 @@ function canUseItem(P,key,slot){
   if(!u) return false;
   return !(key==='manual'&&lvlOf(u)>=3);
 }
-function useItem(P,ii,slot,rng){
-  const s=P.items[ii]; if(!s||P.gold<COST||!canUseItem(P,s.item,slot)) return false;
+function useItem(P,ii,slot,rng,from){
+  const L=from||P.items, s=L[ii]; if(!s||!s.item||P.gold<COST||!canUseItem(P,s.item,slot)) return false;
   const u=P.team[slot], it=ITEMS[s.item];
   if(it.gear){ u.gear=s.item; P.fx.push({k:'text',uid:u.uid,text:it.name}); }
   else if(s.item==='ration') pbuff(P,u,1,1);
   else if(s.item==='feast') rng.shuffle(P.team.filter(Boolean)).slice(0,3).forEach(x=>pbuff(P,x,1,1));
   else if(s.item==='manual'){ const b=lvlOf(u); u.xp++; P.fx.push({k:'text',uid:u.uid,text:'+1 XP'}); if(lvlOf(u)>b) levelUp(P,u,rng); }
-  P.gold-=COST; P.items.splice(ii,1); return true;
+  P.gold-=COST; L.splice(ii,1); return true;
 }
 function endTurn(P,rng){
   P.team.forEach((u,i)=>{ if(!u) return; const h=UNITS[u.key].shop; if(h&&h.endTurn) h.endTurn(u,P,rng,i); });
@@ -668,9 +680,12 @@ function storyPath(S,to){
 
 // ============================== VIEW ======================================
 const W=320, H=180, TEAM_Y=90, HAND_Y=136, FIELD_Y=128, CARD_W=34, CARD_H=46, PITCH=36;
-// The shop is a hand of cards in one centred row: recruits, a small gap, then supplies.
-// HAND_Y is the middle of a card; handX(n) is the centre of the n-th card of the row.
-const handX=n=>{ const a=G.P.shop.length, b=G.P.items.length, gap=a&&b?8:0; return (W-(a+b)*PITCH+2-gap)/2+CARD_W/2+n*PITCH+(n>=a?gap:0); };
+// The shop is a hand of cards in one row: the reserve pile on the left, then recruits, a small gap and
+// supplies, centred in what is left. HAND_Y is the middle of a card. The pitch tightens when eight cards
+// have to fit. Opening the reserve swaps the row for the reserved cards (resX).
+const PILE_X=24, HAND_L=46;
+function rowX(n,a,b){ const m=a+b, gap=a&&b?8:0, room=W-4-HAND_L, pitch=Math.min(PITCH,Math.floor((room-CARD_W-gap)/Math.max(1,m-1))); return Math.round(HAND_L+(room-(m-1)*pitch-CARD_W-gap)/2+CARD_W/2+n*pitch+(n>=a?gap:0)); }
+const handX=n=>rowX(n,G.P.shop.length,G.P.items.length), resX=n=>rowX(n,G.P.reserve.length,0);
 const teamX=i=>210-i*30, shopX=j=>handX(j), itemX=k=>handX(G.P.shop.length+k);
 const slotX=(side,i)=>side?174+i*25:146-i*25;
 const $=id=>document.getElementById(id);
@@ -681,7 +696,7 @@ const CALM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 
 const G={screen:'load',mode:'skirmish',time:0,P:null,S:null,rng:makeRng((Date.now()^(Math.random()*1e9))|0),sel:null,hover:null,drag:null,press:null,busy:false,after:null,opp:null,muted:false,
-  theme:'dusk',coll:null,trans:null,sh:null,demo:false,runOver:true,map:{sel:null,x:0,y:0,path:null,seq:0,fresh:null}};
+  theme:'dusk',coll:null,res:{open:false,o:0},trans:null,sh:null,demo:false,runOver:true,map:{sel:null,x:0,y:0,path:null,seq:0,fresh:null}};
 
 // ---------- pixel assets ----------
 const PAL={k:'#090a14',w:'#ebede9',s:'#c7cfcc',g:'#a8b5b2',G:'#577277',y:'#e8c170',o:'#de9e41',O:'#be772b',b:'#884b2b',n:'#7a4841',r:'#a53030',R:'#752438',p:'#cf573c',u:'#4f8fba',U:'#3c5e8b',d:'#253a5e',t:'#e7d5b3'};
@@ -737,7 +752,7 @@ function buildSprites(img){
   };
   for(const k in UNITS){ const d=UNITS[k]; SPR[k]={n:cut(d.sx,d.sy),w:cut(d.sx,d.sy,'white'),m:cut(d.sx,d.sy,'mummy')}; }
 }
-const sprURL=k=>SURL[k]||(SURL[k]=SPR[k].n.toDataURL());
+const sprURL=k=>SURL[k]||(SURL[k]=SPR[k].n.toDataURL()), icURL=k=>SURL['ic_'+k]||(SURL['ic_'+k]=ICON[k].toDataURL());
 function loadImage(src){return new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=src})}
 // characters.PNG next to this file wins (so the art stays editable); the embedded copy is the
 // fallback for file:// where browsers refuse pixel access to local images.
@@ -1007,10 +1022,6 @@ function drawCard(o){
   R(1,-1,5,9,'#090a14'); R(0,0,7,7,'#090a14'); R(-1,1,9,5,'#090a14');
   R(1,0,5,7,'#de9e41'); R(0,1,7,5,'#de9e41'); R(1,0,4,6,'#e8c170'); R(0,1,6,4,'#e8c170');
   digits(COST,4,3,o.dim?'#a53030':'#602c2c',cg);
-  if(e.frozen){
-    R(1,1,32,44,'rgba(164,221,219,.26)'); R(1,0,32,1,'#ebede9'); R(0,1,34,1,'#ebede9'); R(2,2,5,1,'#ebede9'); R(24,2,7,1,'#ebede9'); R(12,2,3,1,'#ebede9');
-    [[4,3],[9,2],[15,4],[21,2],[27,3]].forEach(([ix,ih])=>{ R(ix,45,2,1,'#a4dddb'); R(ix,46,1,ih,'#a4dddb'); R(ix,46,1,1,'#ebede9'); });
-  }
   if(o.dim) R(1,1,32,44,'rgba(9,10,20,.42)');
   g.save(); g.translate(Math.round(o.x),Math.round(o.y)); if(o.rot) g.rotate(o.rot); g.scale(o.sx||1,o.sy||1);
   g.globalAlpha=o.alpha==null?1:Math.max(0,Math.min(1,o.alpha));
@@ -1035,16 +1046,25 @@ function brackets(x,y){ const o=(G.time/250|0)%2; corners(x-14-o,x+13+o,y-23-o,y
 function arrowDown(x,y,col){ const b=(G.time/180|0)%2; g.fillStyle='#090a14'; g.fillRect(x-3,y-1+b,7,3); g.fillRect(x-2,y+2+b,5,1); g.fillRect(x-1,y+3+b,3,1); g.fillStyle=col; g.fillRect(x-2,y+b,5,1); g.fillRect(x-1,y+1+b,3,1); g.fillRect(x,y+2+b,1,1); }
 
 const same=(a,b)=>!!a&&!!b&&a.type===b.type&&a.i===b.i;
-const entityAt=h=>!h||!G.P?null:h.type==='team'?G.P.team[h.i]:h.type==='shop'?G.P.shop[h.i]:h.type==='item'?G.P.items[h.i]:null;
+const entityAt=h=>!h||!G.P?null:h.type==='team'?G.P.team[h.i]:h.type==='shop'?G.P.shop[h.i]:h.type==='item'?G.P.items[h.i]:h.type==='res'?G.P.reserve[h.i]:null;
 const activeSrc=()=>G.drag&&G.drag.moved?G.drag.src:(G.sel&&G.sel.type!=='faction'?G.sel:null);
 function targetOK(src,i){
   const P=G.P; if(!src||!entityAt(src)) return false;
   if(src.type==='shop') return P.gold>=COST&&canBuyInto(P,P.shop[src.i].u,i);
   if(src.type==='team') return src.i!==i;
   if(src.type==='item') return P.gold>=COST&&canUseItem(P,P.items[src.i].item,i);
+  if(src.type==='res'){ const e=P.reserve[src.i]; return P.gold>=COST&&(e.u?canBuyInto(P,e.u,i):canUseItem(P,e.item,i)); }
   return false;
 }
-const CX=new Map(), GHOST=[]; let handT=0;
+const CX=new Map(), GHOST=[], FLY=[]; let handT=0;
+const outBack=q=>{ const r=q-1; return 1+2.7*r*r*r+1.7*r*r; };
+// the empty place where the reserve pile sits
+function tray(col){
+  const l=PILE_X-17, t=HAND_Y-23; g.fillStyle='rgba(9,10,20,.42)'; g.fillRect(l+1,t+1,32,44); g.fillStyle=col;
+  for(let k=1;k<33;k+=4){ g.fillRect(l+k,t,2,1); g.fillRect(l+k,t+45,2,1); } for(let k=2;k<44;k+=4){ g.fillRect(l,t+k,1,2); g.fillRect(l+33,t+k,1,2); }
+}
+// A card landing on the pile: thump, dust, and the pile squashes under it.
+function stowLand(){ sfx('land'); sfx('coin'); dust(PILE_X,HAND_Y+22,7,'#e7d5b3'); ring(PILE_X,HAND_Y,'#e8c170',24,320); sparkle(PILE_X,HAND_Y-10,['#e8c170','#ebede9'],6); anim('pile','land'); shake(.9,110); }
 function renderShop(){
   const P=G.P, src=activeSrc(), dragging=G.drag&&G.drag.moved?G.drag:null, blink=(G.time/300|0)%2;
   g.drawImage(BG.camp,0,0); twinkles(); campfire(40,104);
@@ -1056,29 +1076,54 @@ function renderShop(){
     if(same(G.sel,{type:'team',i})) brackets(x,TEAM_Y);
   }
   const ax=teamX(0)+17+((G.time/400|0)%2); g.fillStyle='#e8c170'; g.fillRect(ax,TEAM_Y-12,1,5); g.fillRect(ax+1,TEAM_Y-11,1,3); g.fillRect(ax+2,TEAM_Y-10,1,1);
-  // the hand: cards slide to their place as the row re-centres, lift on hover and when selected
+  const R=G.res, dt=G.time-handT, ease=G.demo||CALM?1:Math.min(1,dt*.02), labels=[], dim=P.gold<COST, nr=P.reserve.length; handT=G.time;
+  // R.o runs from 0 (the hand is showing) to 1 (the reserve is spread out in its place)
+  R.o=G.demo||CALM?+R.open:Math.max(0,Math.min(1,R.o+(R.open?dt:-dt)/260));
+  if(R.o>0){ g.fillStyle=`rgba(9,10,20,${(.5*R.o).toFixed(2)})`; g.fillRect(HAND_L-3,HAND_Y-27,W,54); g.globalAlpha=R.o; g.fillStyle='#4f8fba'; g.fillRect(HAND_L-3,HAND_Y-28,W,1); g.fillRect(HAND_L-3,HAND_Y+27,W,1); g.globalAlpha=1; }
+  // the pile's place: a drop target for cards from the hand
+  const canStow=dragging&&(dragging.src.type==='shop'||dragging.src.type==='item')&&P.gold>=RESERVE_COST&&nr<RESERVE_MAX;
+  tray(canStow?(blink?'#e8c170':'#de9e41'):same(G.hover,{type:'pile',i:0})?'#a8b5b2':'#577277');
+  if(canStow) arrowDown(PILE_X,HAND_Y-36,'#e8c170');
+  // the hand: cards slide to their place as the row re-centres, lift on hover and when selected, and duck away while the reserve is open
   const cards=[...P.shop.map((s,j)=>({s,id:s.u.uid,h:{type:'shop',i:j}})),...P.items.map((s,k)=>({s,id:s.id,h:{type:'item',i:k}}))];
-  const ease=G.demo||CALM?1:Math.min(1,(G.time-handT)*.02), labels=[], dim=P.gold<COST; handT=G.time;
   for(const id of CX.keys()) if(!cards.some(c=>c.id===id)) CX.delete(id);
   cards.forEach((c,n)=>{
     const tx=handX(n), px=CX.get(c.id), x=px==null||Math.abs(tx-px)<.6?tx:px+(tx-px)*ease, rx=Math.round(x); CX.set(c.id,x);
+    if(R.o>=1) return;
     if(dragging&&same(dragging.src,c.h)){ g.fillStyle='rgba(9,10,20,.3)'; g.fillRect(rx-16,HAND_Y-22,32,44); return; }
-    const hv=same(G.hover,c.h)&&!dragging, sel=same(G.sel,c.h), a=animOf(c.id), y=HAND_Y-(sel?4:hv?2:0);
-    const o={x:x+a.dx,y:y+a.dy,e:c.s,rot:a.rot,sx:a.sx,sy:a.sy,alpha:a.al,dim,glow:c.s.bonus&&blink?'#e8c170':null};
-    if(a.al>=1&&!a.rot){ g.fillStyle='rgba(9,10,20,.4)'; g.fillRect(rx-15,HAND_Y-21+Math.max(0,a.dy),34,46); }
+    const q=Math.max(0,Math.min(1,R.o*1.6-n*.08)), hv=same(G.hover,c.h)&&!dragging, sel=same(G.sel,c.h), a=animOf(c.id), y=HAND_Y-(sel?4:hv?2:0)+q*q*74;
+    const o={x:x+a.dx,y:y+a.dy,e:c.s,rot:a.rot+q*.25*(n%2?1:-1),sx:a.sx,sy:a.sy,alpha:a.al,dim,glow:c.s.bonus&&blink?'#e8c170':null};
+    if(a.al>=1&&!a.rot&&!R.o){ g.fillStyle='rgba(9,10,20,.4)'; g.fillRect(rx-15,HAND_Y-21+Math.max(0,a.dy),34,46); }
     drawCard(o); labels.push(o);
-    if(c.s.bonus&&Math.random()<.08) sparkle(x,y-18,'#e8c170',1);
+    if(c.s.bonus&&!R.o&&Math.random()<.08) sparkle(x,y-18,'#e8c170',1);
     if(sel){ const k=(G.time/250|0)%2; corners(rx-19-k,rx+18+k,y-25-k,y+24+k); }
   });
+  // the reserve: a stack on the pile's place while closed, dealt out along the row when open. The newest card is on top and leaves first.
+  const pa=animOf('pile'), away=(e,i)=>FLY.some(f=>f.e===e)||(dragging&&same(dragging.src,{type:'res',i}));
+  let top=nr-1; while(top>=0&&away(P.reserve[top],top)) top--;
+  P.reserve.forEach((e,i)=>{
+    const h={type:'res',i}, back=nr-1-i;
+    if(away(e,i)) return;
+    const q=Math.max(0,Math.min(1,R.o*(1+.18*(nr-1))-back*.18)), k=outBack(q), hv=same(G.hover,h)&&!dragging&&q>=1, sel=same(G.sel,h);
+    const px=PILE_X-back*2, py=HAND_Y-back*2, x=px+(resX(i)-px)*k, y=py+(HAND_Y-py)*k-Math.sin(q*Math.PI)*12-(sel?4:hv?2:0), a=animOf(idOf(e));
+    const o={x:x+a.dx+(q?0:pa.dx),y:y+a.dy,e,rot:(1-q)*(q?-.5:0),sx:a.sx*(q?1:pa.sx),sy:a.sy*(q?1:pa.sy),dim};
+    if(q>=1){ g.fillStyle='rgba(9,10,20,.4)'; g.fillRect(Math.round(x)-15,HAND_Y-21,34,46); }
+    drawCard(o); if(q>.5||i===top) labels.push(o);
+    if(sel){ const b=(G.time/250|0)%2, rx=Math.round(x); corners(rx-19-b,rx+18+b,y-25-b,y+24+b); }
+  });
+  if(nr&&R.o<.2&&!FLY.length) badge(PILE_X+18,HAND_Y-24,nr,nr>=RESERVE_MAX?'#a53030':'#3c5e8b',true);
   // cards thrown away by a roll
   for(let i=GHOST.length-1;i>=0;i--){ const q=GHOST[i], p=(G.time-q.t0)/240; if(p>=1){ GHOST.splice(i,1); continue; } if(p<0) continue;
     const o={x:q.x,y:HAND_Y+p*p*64,e:q.e,rot:p*.5*(i%2?1:-1),alpha:1-p*p}; drawCard(o); labels.push(o); }
   drawParts(g,0);
+  // a card on its way to the pile: one full turn in the air, then it lands
+  for(let i=FLY.length-1;i>=0;i--){ const f=FLY[i], q=(G.time-f.t0)/f.ms; if(q>=1){ FLY.splice(i,1); stowLand(); continue; }
+    const k=q*q*(3-2*q), o={x:f.x0+(PILE_X-f.x0)*k,y:f.y0+(HAND_Y-f.y0)*k-Math.sin(q*Math.PI)*30,e:f.e,rot:-6.283*k,sx:1-.25*Math.sin(q*Math.PI),sy:1-.25*Math.sin(q*Math.PI)}; drawCard(o); labels.push(o); }
   if(dragging){
     // a card stays a card while it is over the hand and becomes the unit (or the item) once it is carried onto the field
     const e=entityAt(dragging.src), rot=Math.max(-.45,Math.min(.45,(dragging.vx||0)*.05));
     if(e&&dragging.card){ const o={x:dragging.x-dragging.ox,y:dragging.y-dragging.oy,e,rot:rot*.6}; drawCard(o); labels.push(o); }
-    else if(e&&dragging.src.type==='item'){ g.save(); g.translate(Math.round(dragging.x),Math.round(dragging.y)); g.rotate(rot); g.drawImage(ICON[e.item],-5,-5); g.restore(); }
+    else if(e&&e.item){ g.save(); g.translate(Math.round(dragging.x),Math.round(dragging.y)); g.rotate(rot); g.drawImage(ICON[e.item],-5,-5); g.restore(); }
     else if(e){ const u=e.u||e; drawUnit({key:u.key,x:dragging.x,y:dragging.y+5,shadow:dragging.y+14,rot,phase:u.uid}); }
   }
   cardLabels(labels);
@@ -1261,7 +1306,7 @@ let coinN=0, coinT=0;
 const SFX={
   click(){tone(vary(660),.04,'square',.03)}, buy(){tone(523,.07);tone(784,.1,'square',.04,0,.07);noise(.06,.05,900)}, sell(){tone(988,.06);tone(1319,.12,'square',.04,0,.06)},
   coin(){ const now=performance.now(); coinN=now-coinT<400?Math.min(coinN+1,8):0; coinT=now; tone(1047*Math.pow(1.06,coinN),.07,'square',.03); },
-  roll(){for(let i=0;i<4;i++) tone(300+i*90,.05,'triangle',.06,0,i*.045)}, freeze(){tone(1400,.14,'sine',.05,-600);tone(2100,.1,'sine',.03,-900,.04)},
+  roll(){for(let i=0;i<4;i++) tone(300+i*90,.05,'triangle',.06,0,i*.045)}, fan(){for(let i=0;i<4;i++){noise(.05,.035,2600+i*500,i*.05);tone(420+i*70,.03,'triangle',.02,-150,i*.05)}}, stow(){noise(.16,.04,1800);tone(vary(700),.16,'sine',.03,-450)},
   error(){tone(160,.14,'sawtooth',.04,-40)}, level(){[523,659,784,1047].forEach((f,i)=>tone(f,.11,'square',.04,0,i*.07))}, merge(){tone(440,.08,'triangle',.06,440);tone(880,.12,'square',.03,0,.08)},
   land(){noise(.07,.06,500);tone(vary(140),.06,'sine',.06,-50)}, card(){noise(.05,.035,vary(3200));tone(vary(520),.03,'triangle',.02,-200)}, pop(){tone(vary(500),.09,'triangle',.05,500);noise(.12,.04,2500)}, step(){noise(.03,.025,700)}, whoosh(){noise(.3,.05,1500);tone(300,.25,'sine',.02,600)},
   swing(){noise(.08,.03,3000)}, hit(){noise(.09,.09,1100);tone(vary(190),.09,'sawtooth',.05,-130)}, bighit(){noise(.2,.14,800);tone(vary(120),.2,'sawtooth',.08,-80);tone(60,.2,'sine',.1,-25)},
@@ -1304,8 +1349,9 @@ function refreshInfo(){
     const e=entityAt(h);
     if(h.type==='faction') html=factionInfo(h.i,(synergies(P.team)[h.i]||{n:0}).n);
     else if(e&&h.type==='team') html=unitInfo(e,`Sells for ${lvlOf(e)} gold.`);
-    else if(e&&h.type==='shop') html=unitInfo(e.u,`Costs ${COST} gold.${e.frozen?' Frozen.':''}`);
-    else if(e&&h.type==='item'){ const it=ITEMS[e.item]; html=`<div class="nm"><span>${it.name}</span></div><div class="sub">${it.gear?'Gear':'Supply'} · Tier ${it.tier}</div><div class="ab">${it.text}</div><div class="hint">Costs ${COST} gold. ${it.noTarget?'Drop it on your army.':'Drop it on a unit.'}${it.gear?' A unit holds one piece of gear.':''}</div>`; }
+    else if(h.type==='pile') html=`<div class="nm"><span>Reserve</span><span class="lv">${P.reserve.length}/${RESERVE_MAX}</span></div><div class="ab">Set a card aside for <b>${RESERVE_COST}</b> gold. It waits here through rolls and turns, and still costs <b>${COST}</b> when you play it.</div><div class="hint">Drag a card here to reserve it. Click the pile to look through it, or to discard a card you no longer want.</div>`;
+    else if(e&&(h.type==='shop'||h.type==='item'||h.type==='res')){ const cost=h.type==='res'?`In reserve. Costs ${COST} gold to play. Select it to discard it.`:`Costs ${COST} gold, or ${RESERVE_COST} to reserve.`, it=ITEMS[e.item];
+      html=e.u?unitInfo(e.u,cost):`<div class="nm"><span>${it.name}</span></div><div class="sub">${it.gear?'Gear':'Supply'} · Tier ${it.tier}</div><div class="ab">${it.text}</div><div class="hint">${cost} ${it.noTarget?'Drop it on your army.':'Drop it on a unit.'}${it.gear?' A unit holds one piece of gear.':''}</div>`; }
   } else if(G.screen==='battle'&&h&&h.type==='bunit'){ const u=view(h.i); if(u) html=unitInfo(u); }
   $('info').innerHTML=html; show('info',!!html); $('info').classList.toggle('battle',G.screen==='battle');
 }
@@ -1321,7 +1367,7 @@ function setHud(o){
 let synSeen='';
 function refreshUI(){
   const P=G.P, s=G.screen, shop=s==='shop', battle=s==='battle', map=s==='map';
-  show('hud',shop||battle); show('syn',shop); show('shopbar',shop); show('lblFront',shop); show('lblShop',shop); show('hand',shop);
+  show('hud',shop||battle); show('syn',shop); show('shopbar',shop); show('lblFront',shop); show('lblShop',shop); show('lblPile',shop); show('hand',shop);
   show('bnames',battle); show('bbar',battle&&$('banner').classList.contains('hide')); show('title',s==='title');
   show('maphead',map); show('maplbls',map); show('crests',map); show('mapcard',map&&!G.map.path); show('btnHome',shop||map);
   if(shop||battle){
@@ -1335,11 +1381,13 @@ function refreshUI(){
       :'<div class="syn-hint">Field 2 or 4 units of the same army to unlock its bonus.</div>';
     if(on.some(k=>!seen.includes(k))&&synSeen!=='-') sfx('buff'); synSeen=on.join();
     $('lblFront').style.left=`calc(var(--u)*${teamX(0)})`; $('lblFront').style.top=`calc(var(--u)*${TEAM_Y+11})`;
-    $('lblShop').textContent=`TIER ${tierOf(P)} RECRUITS`;
+    $('lblShop').textContent=G.res.open?`RESERVE ${P.reserve.length}/${RESERVE_MAX} · ${COST} GOLD TO PLAY A CARD`:`TIER ${tierOf(P)} RECRUITS`; $('lblShop').classList.toggle('res',G.res.open);
+    $('lblPile').textContent=G.res.open?'◂ BACK':P.reserve.length?'':'RESERVE';
     $('btnRoll').disabled=P.gold<1; $('btnEnd').classList.toggle('pulse',P.gold<1&&P.team.some(Boolean));
     const e=entityAt(G.sel); let ctx='';
     if(e&&G.sel.type==='team') ctx=`<button class="btn red" id="btnSell">Sell +${lvlOf(e)}</button>`;
-    else if(e) ctx=`<button class="btn ice" id="btnFreeze">${e.frozen?'Unfreeze':'Freeze'}</button>`;
+    else if(e&&G.sel.type==='res') ctx=`<button class="btn red" id="btnDiscard">Discard</button>`;
+    else if(e) ctx=`<button class="btn ice" id="btnRes">Reserve <img src="${icURL('coin')}" alt="">${RESERVE_COST}</button>`;
     $('ctx').innerHTML=ctx;
     const d=G.drag&&G.drag.moved&&G.drag.src.type==='team'?entityAt(G.drag.src):null;
     show('sellzone',!!d); if(d) $('sellzone').textContent=`SELL +${lvlOf(d)} GOLD`;
@@ -1369,37 +1417,57 @@ function flushFx(){
 }
 function deny(msg,src){ floater(W/2,108,msg,'err'); sfx('error'); shake(1,140); anim(idOf(entityAt(src)),'shake'); }
 function save(){ try{ if(G.mode==='story') localStorage.setItem(STORY_KEY,JSON.stringify({S:G.S,P:G.runOver?null:G.P,UID})); else localStorage.setItem(SAVE_KEY,JSON.stringify({P:G.P,UID})); }catch(e){} }
-function loadSave(key){ try{ const s=JSON.parse(localStorage.getItem(key||SAVE_KEY)); if(!s) return null; if(s.P){ if(!Array.isArray(s.P.team)) return null; s.P.goal=s.P.goal||WINS; s.P.fx=[]; } return s.P||s.S?s:null; }catch(e){ return null; } }
+function loadSave(key){ try{ const s=JSON.parse(localStorage.getItem(key||SAVE_KEY)); if(!s) return null; if(s.P){ if(!Array.isArray(s.P.team)) return null; s.P.goal=s.P.goal||WINS; s.P.fx=[]; s.P.reserve=s.P.reserve||[]; } return s.P||s.S?s:null; }catch(e){ return null; } }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 
+// Every shop action. A card played from the reserve (`res`) behaves like the unit or item it is.
 function act(src,dst){
   const P=G.P; let ok=false; if(G.busy||G.trans) return;
+  const L=src.type==='res'?P.reserve:src.type==='shop'?P.shop:P.items, card=src.type!=='team'&&L[src.i];
   if(dst.type==='sell'){ const x=teamX(src.i); if(src.type==='team'&&sellUnit(P,src.i,G.rng)){ ok=true; sfx('sell'); dust(x,TEAM_Y,6); burst(x,TEAM_Y-9,['#e8c170','#de9e41'],8); coins(x,TEAM_Y-10,P.fx.reduce((n,f)=>n+(f.k==='gold'?f.n:0),0)); floater(x,TEAM_Y-22,'SOLD','gold'); } }
-  else if(src.type==='shop'){
-    const merge=canMerge(P.team[dst.i],P.shop[src.i].u); let res;
+  else if(dst.type==='discard'){ const x=resX(src.i); if(src.type==='res'&&discardReserve(P,src.i)){ ok=true; sfx('card'); sfx('faint'); dust(x,HAND_Y+18,6,'#e7d5b3'); floater(x,HAND_Y-30,'DISCARDED','err'); if(!G.demo&&!CALM) GHOST.push({e:card,x,t0:G.time}); } }
+  else if(dst.type==='pile'){
+    // dst.x,y is where the card was let go; a card sent by button or key leaves from its place in the hand
+    const x0=dst.x==null?(src.type==='shop'?shopX(src.i):itemX(src.i)):dst.x, y0=dst.y==null?HAND_Y:dst.y;
+    if(!card||src.type==='res') return;
+    if(P.gold<RESERVE_COST) deny('Not enough gold',src);
+    else if(P.reserve.length>=RESERVE_MAX) deny('The reserve is full',src);
+    else if(reserveCard(P,L,src.i)){ ok=true; floater(24,22,'-'+RESERVE_COST,'spend'); sfx('stow'); if(G.demo||CALM) stowLand(); else FLY.push({e:card,x0,y0,t0:G.time,ms:340}); }
+  }
+  else if(card&&card.u){
+    const merge=canMerge(P.team[dst.i],card.u); let res;
     if(P.gold<COST) deny('Not enough gold',src);
-    else if(!(res=buyUnit(P,src.i,dst.i,G.rng))) deny('Your army is full',src);
+    else if(!(res=buyUnit(P,src.i,dst.i,G.rng,L))) deny('Your army is full',src);
     else{ ok=true; const i=slotOf(res.uid), x=teamX(i); floater(24,22,'-'+COST,'spend');
       if(merge){ sfx('merge'); anim(res.uid,'pop'); ring(x,TEAM_Y-9,'#e8c170',15,320); burst(x,TEAM_Y-10,['#e8c170','#ebede9'],10,.08); floater(x,TEAM_Y-24,'+1/+1','buff'); }
       else{ sfx('buy'); anim(res.uid,'land'); dust(x,TEAM_Y,5); sparkle(x,TEAM_Y-8,FACTIONS[UNITS[res.key].faction].color,5); } }
   }
   else if(src.type==='team'){ const merge=canMerge(P.team[dst.i],P.team[src.i]);
     if(moveUnit(P,src.i,dst.i,G.rng)){ ok=true; sfx(merge?'merge':'land'); for(const i of [src.i,dst.i]){ const u=P.team[i]; if(u){ anim(u.uid,merge?'pop':'land'); dust(teamX(i),TEAM_Y,3); } } if(merge){ ring(teamX(dst.i),TEAM_Y-9,'#e8c170',15,320); burst(teamX(dst.i),TEAM_Y-10,['#e8c170','#ebede9'],10,.08); } } }
-  else if(src.type==='item'){
-    const key=P.items[src.i].item;
+  else if(card){
+    const key=card.item;
     if(P.gold<COST) deny('Not enough gold',src);
-    else if(!useItem(P,src.i,dst.i,G.rng)) deny(ITEMS[key].noTarget?'No units to feed':'Needs a valid unit',src);
+    else if(!useItem(P,src.i,dst.i,G.rng,L)) deny(ITEMS[key].noTarget?'No units to feed':'Needs a valid unit',src);
     else{ ok=true; sfx('buy'); floater(24,22,'-'+COST,'spend'); }
   }
+  if(G.res.open&&!P.reserve.length) G.res.open=false;
   G.sel=null; flushFx(); if(ok) save(); refreshUI();
 }
+// Open or close the reserve. With nothing in it there is nothing to look through, so it explains itself instead.
+function togglePile(){
+  const P=G.P, R=G.res; if(G.screen!=='shop'||G.busy||G.trans) return;
+  if(!R.open&&!P.reserve.length){ floater(70,HAND_Y-34,`Drag a card here: ${RESERVE_COST} gold`,'gold'); sfx('click'); anim('pile','shake'); return; }
+  R.open=!R.open; G.sel=G.hover=null; sfx(R.open?'fan':'card'); refreshUI();
+}
 function pickEntity(x,y){
-  const P=G.P;
+  const P=G.P; let best=null, bd=18;
   for(let i=0;i<5;i++) if(Math.abs(x-teamX(i))<=14&&y>=TEAM_Y-28&&y<=TEAM_Y+12) return {type:'team',i};
   if(y<HAND_Y-27||y>HAND_Y+23) return null;
-  for(let j=0;j<P.shop.length;j++) if(Math.abs(x-shopX(j))<=17) return {type:'shop',i:j};
-  for(let k=0;k<P.items.length;k++) if(Math.abs(x-itemX(k))<=17) return {type:'item',i:k};
-  return null;
+  if(Math.abs(x-PILE_X)<=19) return {type:'pile',i:0};
+  const near=(type,i,cx)=>{ const d=Math.abs(x-cx); if(d<bd){ bd=d; best={type,i}; } };
+  if(G.res.open) P.reserve.forEach((e,i)=>near('res',i,resX(i)));
+  else{ P.shop.forEach((e,j)=>near('shop',j,shopX(j))); P.items.forEach((e,k)=>near('item',k,itemX(k))); }
+  return best;
 }
 const pickNode=(x,y)=>Object.keys(REGIONS).find(id=>Math.abs(x-REGIONS[id].x)<=13&&y>=REGIONS[id].y-24&&y<=REGIONS[id].y+12)||null;
 const toV=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}};
@@ -1407,8 +1475,10 @@ cv.addEventListener('pointerdown',e=>{
   if(G.busy||G.trans) return; const p=toV(e);
   if(G.screen==='map'){ if(!G.map.path){ const id=pickNode(p.x,p.y); if(id!==G.map.sel){ G.map.sel=id; if(id){ sfx('click'); ring(REGIONS[id].x,REGIONS[id].y,'#ebede9',14,300); } refreshUI(); } } return; }
   if(G.screen!=='shop') return;
-  const h=pickEntity(p.x,p.y); G.press=p; G.hover=null;
-  if(h&&entityAt(h)){ const c=h.type!=='team'; G.drag={src:h,x:p.x,y:p.y,vx:0,moved:false,card:c,ox:c?p.x-(h.type==='shop'?shopX(h.i):itemX(h.i)):0,oy:c?p.y-HAND_Y:0}; try{cv.setPointerCapture(e.pointerId)}catch(_){} }
+  let h=pickEntity(p.x,p.y); G.press=p; G.hover=null; G.onPile=!!h&&h.type==='pile';
+  // pressing the closed pile takes hold of its top card: drag it out to play it, or let go to open the pile
+  if(G.onPile) h=!G.res.open&&G.P.reserve.length?{type:'res',i:G.P.reserve.length-1}:null;
+  if(h&&entityAt(h)){ const c=h.type!=='team', cx=h.type==='shop'?shopX(h.i):h.type==='item'?itemX(h.i):G.res.open?resX(h.i):PILE_X; G.drag={src:h,x:p.x,y:p.y,vx:0,moved:false,card:c,ox:c?p.x-cx:0,oy:c?p.y-HAND_Y:0}; try{cv.setPointerCapture(e.pointerId)}catch(_){} }
 });
 cv.addEventListener('pointermove',e=>{
   const p=toV(e);
@@ -1416,7 +1486,7 @@ cv.addEventListener('pointermove',e=>{
     if(G.drag){ const d=G.drag, c=d.src.type!=='team'&&p.y>HAND_Y-28; d.vx=d.vx*.7+(p.x-d.x)*.3; d.x=p.x; d.y=p.y;
       if(c!==d.card){ d.card=c; if(d.moved){ sfx('card'); if(!c) sparkle(p.x,p.y,'#e7d5b3',5); } }
       if(!G.drag.moved&&Math.hypot(p.x-G.press.x,p.y-G.press.y)>3){ G.drag.moved=true; G.sel=null; sfx('click'); refreshUI(); } }
-    else if(e.pointerType==='mouse'){ const h=pickEntity(p.x,p.y), hv=h&&entityAt(h)?h:null; if(!same(hv,G.hover)&&(hv||G.hover&&G.hover.type!=='faction')){ G.hover=hv; refreshInfo(); } }
+    else if(e.pointerType==='mouse'){ const h=pickEntity(p.x,p.y), hv=h&&(entityAt(h)||h.type==='pile')?h:null; if(!same(hv,G.hover)&&(hv||G.hover&&G.hover.type!=='faction')){ G.hover=hv; refreshInfo(); } }
   } else if(G.screen==='battle'){
     let hv=null; for(const L of BV.views) for(const u of L) if(Math.abs(p.x-u.x)<=11&&p.y>=FIELD_Y-22&&p.y<=FIELD_Y+12) hv={type:'bunit',i:u.id};
     if(!same(hv,G.hover)){ G.hover=hv; refreshInfo(); }
@@ -1424,42 +1494,44 @@ cv.addEventListener('pointermove',e=>{
 });
 cv.addEventListener('pointerup',e=>{
   if(G.screen!=='shop'||G.busy||G.trans){ G.drag=null; return; }
-  const p=toV(e), d=G.drag, h=pickEntity(p.x,p.y); G.drag=null;
+  const p=toV(e), d=G.drag, h=pickEntity(p.x,p.y), onPile=G.onPile; G.drag=null; G.onPile=false;
   if(d&&d.moved){
     if(d.src.type==='team'&&p.y>HAND_Y-26) act(d.src,{type:'sell'});
     else if(h&&h.type==='team') act(d.src,h);
+    else if(h&&h.type==='pile'&&d.src.type!=='res') act(d.src,{type:'pile',x:p.x-d.ox,y:p.y-d.oy});
     else{ anim(idOf(entityAt(d.src)),d.src.type==='team'?'land':'pop'); refreshUI(); }
     return;
   }
+  if(onPile){ if(h&&h.type==='pile'){ if(G.sel&&(G.sel.type==='shop'||G.sel.type==='item')) act(G.sel,{type:'pile'}); else togglePile(); } return; }
   if(G.sel&&G.sel.type!=='faction'&&h&&h.type==='team'&&!same(G.sel,h)) return act(G.sel,h);
   if(h&&entityAt(h)){ G.sel=same(G.sel,h)?null:h; sfx('click'); anim(idOf(entityAt(h)),'hop'); } else G.sel=null;
   refreshUI();
 });
-cv.addEventListener('pointercancel',()=>{ G.drag=null; if(G.screen==='shop') refreshUI(); });
+cv.addEventListener('pointercancel',()=>{ G.drag=null; G.onPile=false; if(G.screen==='shop') refreshUI(); });
 cv.addEventListener('pointerleave',()=>{ if(G.hover&&G.hover.type!=='faction'){ G.hover=null; refreshInfo(); } });
 
 $('syn').addEventListener('pointerover',e=>{ const r=e.target.closest('.syn-row'); if(r){ G.hover={type:'faction',i:r.dataset.f}; refreshInfo(); } });
 $('syn').addEventListener('pointerout',()=>{ if(G.hover&&G.hover.type==='faction'){ G.hover=null; refreshInfo(); } });
 $('syn').addEventListener('click',e=>{ const r=e.target.closest('.syn-row'); if(r){ const h={type:'faction',i:r.dataset.f}; G.sel=same(G.sel,h)?null:h; refreshUI(); } });
-function dropIn(delay){ let n=0; [...G.P.shop,...G.P.items].forEach(s=>{ if(!s.frozen) anim(idOf(s),'deal',(delay||0)+n++*60); }); }
+function dropIn(delay){ let n=0; [...G.P.shop,...G.P.items].forEach(s=>anim(idOf(s),'deal',(delay||0)+n++*60)); }
 function doRoll(){
   if(G.screen!=='shop'||G.busy||G.trans) return; const P=G.P;
-  const old=[...P.shop,...P.items].map((e,n)=>({e,x:handX(n)})).filter(o=>!o.e.frozen);
+  const old=[...P.shop,...P.items].map((e,n)=>({e,x:handX(n)}));
   if(!rollShop(P,G.rng)) return deny('Not enough gold');
-  if(!G.demo&&!CALM) old.forEach((o,n)=>GHOST.push({e:o.e,x:o.x,t0:G.time+n*25}));
-  sfx('roll'); floater(24,22,'-1','spend'); dropIn(140);
+  if(!G.demo&&!CALM&&!G.res.open) old.forEach((o,n)=>GHOST.push({e:o.e,x:o.x,t0:G.time+n*25}));
+  G.res.open=false; sfx('roll'); floater(24,22,'-1','spend'); dropIn(140);
   if(G.sel&&G.sel.type!=='team') G.sel=null; G.hover=null; save(); refreshUI();
 }
-function doFreeze(){ const h=G.sel, e=!G.busy&&h&&h.type!=='team'&&entityAt(h); if(!e) return; e.frozen=!e.frozen; sfx('freeze'); const x=h.type==='shop'?shopX(h.i):itemX(h.i); burst(x,HAND_Y-6,['#a4dddb','#ebede9','#73bed3'],14,.09); ring(x,HAND_Y,'#a4dddb',26,320); anim(idOf(e),'pop'); save(); refreshUI(); }
-function doSell(){ if(G.sel&&G.sel.type==='team'&&entityAt(G.sel)) act(G.sel,{type:'sell'}); }
+function doReserve(){ const h=G.sel; if(h&&(h.type==='shop'||h.type==='item')&&entityAt(h)) act(h,{type:'pile'}); }
+function doSell(){ const h=G.sel; if(!h||!entityAt(h)) return; if(h.type==='team') act(h,{type:'sell'}); else if(h.type==='res') act(h,{type:'discard'}); }
 $('btnRoll').onclick=doRoll;
-$('ctx').addEventListener('click',e=>{ if(e.target.id==='btnSell') doSell(); else if(e.target.id==='btnFreeze') doFreeze(); });
+$('ctx').addEventListener('click',e=>{ if(e.target.id==='btnSell') doSell(); else if(e.target.closest('#btnRes')) doReserve(); else if(e.target.id==='btnDiscard') doSell(); });
 $('btnEnd').onclick=()=>endTurnFlow();
-addEventListener('keydown',e=>{ if(G.screen!=='shop'||G.coll||e.metaKey||e.ctrlKey||!$('modal').classList.contains('hide')) return; const k=e.key.toLowerCase(); if(k==='r') doRoll(); else if(k==='f') doFreeze(); else if(k==='s') doSell(); });
+addEventListener('keydown',e=>{ if(G.screen!=='shop'||G.coll||e.metaKey||e.ctrlKey||!$('modal').classList.contains('hide')) return; const k=e.key.toLowerCase(); if(k==='r') doRoll(); else if(k==='e') doReserve(); else if(k==='q'||(k==='escape'&&G.res.open)) togglePile(); else if(k==='s') doSell(); });
 
 // ---------- flow ----------
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-function clearStage(){ G.sel=G.hover=G.drag=null; G.busy=false; T.token++; show('banner',false); show('splash',false); $('fl').innerHTML=''; PT.length=0; FX.length=0; AN.clear(); GHOST.length=0; CX.clear(); cv.classList.remove('grey'); cv.style.cursor=''; for(const k in HUDV) delete HUDV[k]; }
+function clearStage(){ G.sel=G.hover=G.drag=null; G.busy=false; T.token++; show('banner',false); show('splash',false); $('fl').innerHTML=''; PT.length=0; FX.length=0; AN.clear(); GHOST.length=0; FLY.length=0; CX.clear(); G.res.open=false; G.res.o=0; G.onPile=false; cv.classList.remove('grey'); cv.style.cursor=''; for(const k in HUDV) delete HUDV[k]; }
 function enterShop(){
   clearStage(); G.screen='shop'; synSeen='-'; const P=G.P;
   refreshUI(); flushFx(); dropIn(); P.team.forEach((u,i)=>{ if(u) anim(u.uid,'hop',i*60); });
@@ -1471,7 +1543,7 @@ function newSkirmish(){ G.mode='skirmish'; UID=1; startRun(newPlayer()); }
 async function endTurnFlow(){
   const P=G.P; if(G.busy||G.trans||G.screen!=='shop') return;
   if(!P.team.some(Boolean)) return deny('Recruit at least one unit first');
-  G.busy=true; G.sel=G.hover=G.drag=null;
+  G.busy=true; G.sel=G.hover=G.drag=null; G.res.open=false;
   endTurn(P,G.rng); const had=P.fx.length; flushFx(); refreshUI(); sfx('end'); P.team.forEach((u,i)=>{ if(u&&!AN.has(u.uid)) anim(u.uid,'hop',i*70); });
   await sleep(had?900:420);
   const story=G.mode==='story', opp=makeOpponent(P.turn,G.rng,story?storyFoe(P):null), sim=simulateBattle(P.team,opp.team,(G.rng()*2147483647)|0);
@@ -1601,7 +1673,8 @@ function help(){
 <li><b>Armies.</b> Field 2 or 4 units from the same army to switch on its bonus. Mercenaries count toward every army you already field 2 of.</li>
 <li><b>Story.</b> Start with the Medieval army and march across the map. Win a land's battles and beat its champion to add its army to your recruits.</li>
 <li><b>Skirmish.</b> Every army from the start. Win ${WINS} battles before you lose ${LIVES} lives.</li>
-<li><b>Tips.</b> Freeze a card to keep it for next turn. Drag a unit down onto your hand to sell it. Keys: R roll, F freeze, S sell.</li></ul>
+<li><b>Reserve.</b> Drag a card onto the pile left of your hand to set it aside for ${RESERVE_COST} gold. It waits there through rolls and turns, up to ${RESERVE_MAX} cards, and costs the usual ${COST} to play. Click the pile to look through it; select a card there to discard it (no gold back).</li>
+<li><b>Tips.</b> Drag a unit down onto your hand to sell it. Keys: R roll, E reserve, Q open the reserve, S sell or discard.</li></ul>
 <button class="btn gold" id="btnOk">Got it</button>`);
   $('btnOk').onclick=closeModal; $('btnOk').focus({preventScroll:true});
 }
