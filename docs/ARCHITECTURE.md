@@ -129,9 +129,9 @@ while a battle is being skipped (`skipping()`) and respect `prefers-reduced-moti
 keys it out, then writes each unit into an 18×18 canvas with a 1px dark outline. Units face right;
 the enemy side is drawn mirrored.
 
-Two sprites spill a pixel outside their cell and override the origin in their `def`: the Samurai
-(`sy:81`) and the Sellsword (`sx:31`). Mummies reuse the fallen unit's sprite through a grey-green
-colour ramp (`MUMMY_RAMP`).
+Every sprite sits inside its own cell. One that has to spill over can override its origin with
+`sx`/`sy` in the `extra` argument of its `def`. Mummies reuse the fallen unit's sprite through a
+grey-green colour ramp (`MUMMY_RAMP`).
 
 `loadSprites` tries `characters.PNG` first and falls back to the base64 copy in `SPRITE_FALLBACK`
 when pixel access is refused (always the case on `file://`). `tools/embed_sprite.py` keeps the

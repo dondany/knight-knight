@@ -49,7 +49,7 @@ Both modes save automatically in the browser.
 | Romans | Drill | A random Roman gains +1 health each turn | Every Roman does |
 | Japanese | Bushido | First attack deals +2 damage | First attack deals +5 damage |
 
-All 32 units, 7 items and the exact numbers are in the
+All 35 units, 7 items and the exact numbers are in the
 [field guide](https://dondany.github.io/knight-knight/docs/) and in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Project layout

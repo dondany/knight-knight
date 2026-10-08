@@ -32,8 +32,8 @@ A region can be attacked once a road reaches it from conquered land.
 | Samarkand | Mercenaries | 5 | 4 | 9 | The Warlord (Barbarian) | +4/+8 | Norse Fjords, Sparta, Thebes, Kyoto |
 | Kyoto | Japanese | 5 | 5 | 8 | The Shogun (Samurai) | none | Samarkand |
 
-Samarkand's rivals draft from every army (favouring mercenaries), since two units do not make an
-army. Conquering all six ends the story.
+Samarkand's rivals draft from every army (favouring mercenaries), since a team of only wild units
+has no bonus. Conquering all six ends the story.
 
 ## Run structure
 
@@ -122,8 +122,11 @@ Mummies are tokens: no ability, no army bonus, and they are never raised a secon
 | Japanese | Yumi Archer | 3 | 1/3 | Arrow Rain | Friend ahead attacks: deal 2 / 4 / 6 damage to the rearmost enemy. | 2,5 | `yumi` |
 | Japanese | Sohei | 4 | 3/6 | Ward | Start of battle: the friend ahead blocks its / the 2 friends ahead block their / the 3 friends ahead block their first hit. | 4,5 | `sohei` |
 | Japanese | Samurai | 5 | 6/4 | Iaido | Strikes first: an enemy it fells cannot strike back. Attacks deal +0 / +3 / +6 damage. | 1,5 | `samurai` |
+| Mercenaries | Carnyx Player | 1 | 1/2 | Rally | Wild. End of turn: give the friend ahead +1 / +2 / +3 health for good. | 4,6 | `carnyx` |
+| Mercenaries | Druid | 2 | 2/3 | Omen | Wild. Start of battle: deal 3 / 6 / 9 damage to the enemy with the highest attack. | 1,6 | `druid` |
 | Mercenaries | Sellsword | 3 | 3/5 | Paid in Gold | Wild. End of turn: if you have 2+ unspent gold, gain +1/+1 / +2/+2 / +3/+3 for good. | 2,6 | `sellsword` |
 | Mercenaries | Barbarian | 4 | 5/5 | Frenzy | Wild. After attack: gain +2 / +4 / +6 attack. | 0,6 | `barbarian` |
+| Mercenaries | Chieftain | 5 | 4/5 | Confederation | Wild. Start of battle: gain +1/+1 / +2/+2 / +3/+3 for each different army on your team. | 3,6 | `chieftain` |
 
 Trigger vocabulary: *Start of battle* (resolved highest attack first), *Before attack* / *After
 attack* (the front unit), *Friend ahead attacks* (the second unit in line), *Hurt* (took damage
@@ -183,35 +186,35 @@ Bot against bot, from `tools/sim.py`. This says how the armies compare when play
 simple bot. It says nothing about how hard the game is for a person, which has not been measured.
 
 This sweep is small (about 700 battles per army), so each rate is only good to about ±2 points.
-On an 84,000-battle sweep the armies sit within 1.6 points of each other: Medieval 43.0, Vikings
-45.5, Spartans 43.7, Egyptians 43.2, Romans 45.8, Japanese 43.7, with 11.7% draws.
+On an 84,000-battle sweep the armies sit within 2.9 points of each other: Medieval 43.8, Vikings
+46.6, Spartans 45.1, Egyptians 44.5, Romans 46.7, Japanese 43.8, with 9.8% draws.
 
 ```
-battles 2100  draws 12.0%  maxRounds 19  maxEvents 126
+battles 2100  draws 10.0%  maxRounds 20  maxEvents 126
 
 win rate by the bot's favoured army (bot vs bot):
-  medieval 39.4%
-  viking   45.0%
-  spartan  43.7%
-  egypt    47.8%
-  roman    43.9%
-  japan    44.6%
+  medieval 44.1%
+  viking   46.1%
+  spartan  46.1%
+  egypt    44.9%
+  roman    44.4%
+  japan    44.5%
 
 bot army strength by turn:
-  turn  1  stats/unit 4.5  tier 1.00  lvl 1.00
-  turn  2  stats/unit 5.3  tier 1.06  lvl 1.09
-  turn  3  stats/unit 6.1  tier 1.34  lvl 1.13
-  turn  4  stats/unit 6.9  tier 1.52  lvl 1.18
-  turn  5  stats/unit 7.8  tier 1.95  lvl 1.23
-  turn  6  stats/unit 8.5  tier 2.21  lvl 1.26
-  turn  7  stats/unit 9.6  tier 2.62  lvl 1.30
-  turn  8  stats/unit 10.9  tier 2.92  lvl 1.35
-  turn  9  stats/unit 12.0  tier 3.37  lvl 1.36
-  turn 10  stats/unit 12.9  tier 3.59  lvl 1.40
-  turn 11  stats/unit 13.9  tier 4.00  lvl 1.44
-  turn 12  stats/unit 14.6  tier 4.24  lvl 1.48
-  turn 13  stats/unit 15.7  tier 4.31  lvl 1.55
-  turn 14  stats/unit 16.8  tier 4.31  lvl 1.71
+  turn  1  stats/unit 4.4  tier 1.00  lvl 1.00
+  turn  2  stats/unit 5.3  tier 1.04  lvl 1.06
+  turn  3  stats/unit 5.9  tier 1.34  lvl 1.10
+  turn  4  stats/unit 6.9  tier 1.51  lvl 1.14
+  turn  5  stats/unit 7.8  tier 1.91  lvl 1.19
+  turn  6  stats/unit 8.8  tier 2.16  lvl 1.24
+  turn  7  stats/unit 10.1  tier 2.58  lvl 1.29
+  turn  8  stats/unit 11.5  tier 2.81  lvl 1.34
+  turn  9  stats/unit 12.2  tier 3.30  lvl 1.34
+  turn 10  stats/unit 13.3  tier 3.65  lvl 1.38
+  turn 11  stats/unit 14.4  tier 3.92  lvl 1.42
+  turn 12  stats/unit 15.4  tier 4.13  lvl 1.47
+  turn 13  stats/unit 16.6  tier 4.11  lvl 1.60
+  turn 14  stats/unit 17.9  tier 4.15  lvl 1.69
 
 abilities that never fired: none
 ```
@@ -231,7 +234,7 @@ norse      3    1      |    88%        34%            5.2        |    87%
 rome       3    1      |    83%        41%            5.4        |    94%
 sparta     4    2      |    75%        29%            5.6        |    98%
 egypt      4    3      |    73%        33%            5.7        |    88%
-steppe     5    3      |    65%        40%            7.0        |    58%
-japan      5    4      |    48%        28%            6.8        |    95%
+steppe     5    3      |    70%        41%            7.1        |    64%
+japan      5    4      |    54%        29%            6.8        |    95%
 ```
 
