@@ -24,16 +24,18 @@ A region can be attacked once a road reaches it from conquered land.
 
 | Region | Army unlocked | Wins | Rival army size | Rival gold | Champion | Bonus | Roads to |
 |---|---|---|---|---|---|---|---|
-| Camelot (home) | Medieval | – | – | – | – | – | Norse Fjords, Rome |
-| Norse Fjords | Vikings | 3 | 3 | 7 | Jarl Ragnar (Jarl) | +1/+2 | Camelot, Samarkand |
-| Rome | Romans | 3 | 3 | 7 | Caesar | +2/+4 | Camelot, Sparta |
-| Sparta | Spartans | 4 | 4 | 5 | King Leonidas | +2/+4 | Rome, Thebes, Samarkand |
-| Thebes | Egyptians | 4 | 4 | 8 | The Pharaoh | +1/+2 | Sparta, Samarkand |
-| Samarkand | Mercenaries | 5 | 4 | 9 | The Warlord (Barbarian) | +4/+8 | Norse Fjords, Sparta, Thebes, Kyoto |
-| Kyoto | Japanese | 5 | 5 | 8 | The Shogun (Samurai) | none | Samarkand |
+| Camelot (home) | Medieval | – | – | – | – | – | Norse Fjords, Alesia, Rome |
+| Norse Fjords | Vikings | 3 | 3 | 7 | Jarl Ragnar (Jarl) | +1/+2 | Camelot, Kyoto |
+| Rome | Romans | 3 | 3 | 7 | Caesar | +2/+4 | Camelot, Alesia, Sparta |
+| Sparta | Spartans | 4 | 4 | 5 | King Leonidas | +2/+4 | Rome, Thebes |
+| Thebes | Egyptians | 4 | 4 | 8 | The Pharaoh | +1/+2 | Sparta, Kyoto |
+| Alesia | Gauls | 5 | 4 | 9 | Vercingetorix (Chieftain) | +3/+6 | Camelot, Rome |
+| Kyoto | Japanese | 5 | 5 | 8 | The Shogun (Samurai) | none | Norse Fjords, Thebes |
 
-Samarkand's rivals draft from every army (favouring mercenaries), since a team of only wild units
-has no bonus. Conquering all six ends the story.
+Alesia's rivals draft from every army (favouring Gauls), since a team of only wild units has no
+bonus; a Gauls-only rival was tried and is far too weak. Alesia sits next to Camelot but is a
+danger-3 land: it can be attacked first, and the bot wins it about 60% of the time whether it owns
+one army or five. Conquering all six ends the story.
 
 ## Run structure
 
@@ -79,9 +81,9 @@ A bonus switches on with 2 units of an army and improves with 4. Duplicates coun
 | Romans | Drill | End of turn: a random Roman gains +1 health permanently | Every Roman does | Shop |
 | Japanese | Bushido | Each Japanese unit deals +2 damage with its first attack | +5 | Battle |
 
-**Mercenaries are wild.** Each one adds 1 to the count of every army that already has 2 real
-members on the team, and receives those armies' bonuses itself. So a mercenary pushes an active
-bonus toward its 4-unit tier but cannot switch a bonus on alone, and a team of only mercenaries
+**Gauls are wild.** Each one adds 1 to the count of every army that already has 2 real
+members on the team, and receives those armies' bonuses itself. So a Gaul pushes an active
+bonus toward its 4-unit tier but cannot switch a bonus on alone, and a team of only Gauls
 has no bonus.
 
 Mummies are tokens: no ability, no army bonus, and they are never raised a second time.
@@ -122,11 +124,11 @@ Mummies are tokens: no ability, no army bonus, and they are never raised a secon
 | Japanese | Yumi Archer | 3 | 1/3 | Arrow Rain | Friend ahead attacks: deal 2 / 4 / 6 damage to the rearmost enemy. | 2,5 | `yumi` |
 | Japanese | Sohei | 4 | 3/6 | Ward | Start of battle: the friend ahead blocks its / the 2 friends ahead block their / the 3 friends ahead block their first hit. | 4,5 | `sohei` |
 | Japanese | Samurai | 5 | 6/4 | Iaido | Strikes first: an enemy it fells cannot strike back. Attacks deal +0 / +3 / +6 damage. | 1,5 | `samurai` |
-| Mercenaries | Carnyx Player | 1 | 1/2 | Rally | Wild. End of turn: give the friend ahead +1 / +2 / +3 health for good. | 4,6 | `carnyx` |
-| Mercenaries | Druid | 2 | 2/3 | Omen | Wild. Start of battle: deal 3 / 6 / 9 damage to the enemy with the highest attack. | 1,6 | `druid` |
-| Mercenaries | Sellsword | 3 | 3/5 | Paid in Gold | Wild. End of turn: if you have 2+ unspent gold, gain +1/+1 / +2/+2 / +3/+3 for good. | 2,6 | `sellsword` |
-| Mercenaries | Barbarian | 4 | 5/5 | Frenzy | Wild. After attack: gain +2 / +4 / +6 attack. | 0,6 | `barbarian` |
-| Mercenaries | Chieftain | 5 | 4/5 | Confederation | Wild. Start of battle: gain +1/+1 / +2/+2 / +3/+3 for each different army on your team. | 3,6 | `chieftain` |
+| Gauls | Carnyx Player | 1 | 1/2 | Rally | Wild. End of turn: give the friend ahead +1 / +2 / +3 health for good. | 4,6 | `carnyx` |
+| Gauls | Druid | 2 | 2/3 | Omen | Wild. Start of battle: deal 3 / 6 / 9 damage to the enemy with the highest attack. | 1,6 | `druid` |
+| Gauls | Ambactus | 3 | 3/5 | Paid in Gold | Wild. End of turn: if you have 2+ unspent gold, gain +1/+1 / +2/+2 / +3/+3 for good. | 2,6 | `ambactus` |
+| Gauls | Gaesatus | 4 | 5/5 | Frenzy | Wild. After attack: gain +2 / +4 / +6 attack. | 0,6 | `gaesatus` |
+| Gauls | Chieftain | 5 | 4/5 | Confederation | Wild. Start of battle: gain +1/+1 / +2/+2 / +3/+3 for each different army on your team. | 3,6 | `chieftain` |
 
 Trigger vocabulary: *Start of battle* (resolved highest attack first), *Before attack* / *After
 attack* (the front unit), *Friend ahead attacks* (the second unit in line), *Hurt* (took damage
@@ -163,7 +165,7 @@ The exact order is in `docs/ARCHITECTURE.md`.
 There is no multiplayer. Each rival is produced on the spot by a bot that plays the same shop for
 the same number of turns:
 
-- It favours one random army (and mercenaries), fills empty slots first, merges duplicates, and
+- It favours one random army (and Gauls), fills empty slots first, merges duplicates, and
   replaces its weakest unit when a clearly better one shows up.
 - It buys gear for ungeared units, War Manuals and Feasts when the army has 3+ units, and rerolls
   with whatever gold is left.
@@ -177,7 +179,7 @@ the same number of turns:
 
 The backdrop follows the enemy army's homeland: dusk castle (Medieval), snowfield with falling
 snow (Vikings), green hills and an aqueduct (Romans), rocky coast with a temple (Spartans), desert
-and pyramids with blowing sand (Egyptians), a pink-dawn steppe with yurts (Mercenaries), and a red
+and pyramids with blowing sand (Egyptians), a misty oak forest with thatched huts and a palisade (Gauls), and a red
 sun over Fuji with drifting petals (Japanese). Purely cosmetic.
 
 ## Balance snapshot
@@ -234,7 +236,7 @@ norse      3    1      |    88%        34%            5.2        |    87%
 rome       3    1      |    83%        41%            5.4        |    94%
 sparta     4    2      |    75%        29%            5.6        |    98%
 egypt      4    3      |    73%        33%            5.7        |    88%
-steppe     5    3      |    70%        41%            7.1        |    64%
-japan      5    4      |    54%        29%            6.8        |    95%
+gaul       5    3      |    60%        34%            7.1        |    62%
+japan      5    4      |    54%        30%            6.7        |    95%
 ```
 

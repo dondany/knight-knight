@@ -9,9 +9,8 @@ Ships as one static page for GitHub Pages.
 
 - `index.html` – the whole game: CSS, markup and one inline script. No build step, no dependencies.
 - `characters.PNG` – 80×112 sprite sheet, 16×16 cells, 5 per row, 7 rows. Rows 0–5 are the armies
-  (medieval, vikings, spartans, egyptians, romans, japanese); row 6 holds the five mercenaries.
-  That row was drawn as Gauls; the game's "Mercenaries" naming predates knowing that and has not
-  been changed yet (see `docs/ROADMAP.md`).
+  (medieval, vikings, spartans, egyptians, romans, japanese); row 6 holds the Gauls, the wild
+  army (key `gaul`; it was called Mercenaries, key `merc`, until the row was finished).
 - `tools/` – dev helpers (rules sim, screenshots, sprite re-embed). Not needed to run the game.
 - `docs/ARCHITECTURE.md` – code map, battle event log, recipes for adding content, testing, gotchas.
 - `docs/DESIGN.md` – rules, numbers, every unit and item, balance snapshot.

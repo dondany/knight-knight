@@ -2,10 +2,10 @@
 // A bot plays each region's expedition with the armies it would typically own by then.
 // "solo" is the same region attempted with only the Medieval army.
 const rng = makeRng(777);
-const ORDER = ['norse', 'rome', 'sparta', 'egypt', 'steppe', 'japan'];
+const ORDER = ['norse', 'rome', 'sparta', 'egypt', 'gaul', 'japan'];
 function expedition(S, id) {
   const P = newPlayer(storyRun(S, id));
-  const armies = S.conquered.map(c => REGIONS[c].army), fav = rng.pick(armies.filter(a => a !== 'merc'));
+  const armies = S.conquered.map(c => REGIONS[c].army), fav = rng.pick(armies.filter(a => a !== 'gaul'));
   let bossSeen = 0, bossWon = 0;
   while (P.wins < P.goal && P.lives > 0) {
     startTurn(P, rng); botShop(P, rng, fav); endTurn(P, rng); P.fx.length = 0;

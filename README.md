@@ -17,7 +17,7 @@ The whole game is one static page: `index.html` plus the sprite sheet. No build 
 - **Arrange.** Drag units to reorder them. The front of your line is on the right and fights first.
 - **Merge.** Drop a unit on its twin. Three copies make level 2, six make level 3, and abilities
   grow with each level.
-- **Armies.** Field 2 or 4 units from the same army to switch on its bonus. Mercenaries count toward
+- **Armies.** Field 2 or 4 units from the same army to switch on its bonus. Gauls count toward
   every army you already field 2 of.
 - **Fight.** End the turn and your army battles a rival on its own.
 - **Tips.** Freeze a recruit to keep it for next turn. Drag a unit down to the shop to sell it.
@@ -31,7 +31,7 @@ rules, armies, units, items, the story map and the current balance.
 ## Modes
 
 - **Story.** You rule Camelot and start with only the Medieval army. March across a world map to
-  the Norse Fjords, Rome, Sparta, Thebes, Samarkand and Kyoto. Each land is a short campaign: raise
+  the Norse Fjords, Alesia, Rome, Sparta, Thebes and Kyoto. Each land is a short campaign: raise
   a fresh army, win 3–5 battles with 3 lives, and beat the land's champion in the last one. Conquer
   it and its army joins your recruits for every campaign after.
 - **Skirmish.** Every army from the start. Win 10 battles before you lose 5 lives.

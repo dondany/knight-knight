@@ -25,10 +25,10 @@ Everything lives in `index.html`: a `<style>` block, the DOM overlay markup, and
 |---|---|
 | `CAP, COST, LIVES, WINS` | Stat cap 50, price 3; skirmish defaults of 5 lives and 10 wins |
 | `makeRng(seed)` | Seeded RNG with `.int`, `.pick`, `.shuffle` |
-| `FACTIONS`, `REAL_F` | Army names, colours, bonus text. `merc` is the wild pseudo-army |
+| `FACTIONS`, `REAL_F` | Army names, colours, bonus text. `gaul` is the wild army, kept out of `REAL_F` |
 | `def(...)` / `UNITS` | Unit table. One `def` call per unit |
 | `ITEMS` | Supplies and gear |
-| `synergies(units)` | `{army: {n, w, lvl}}`; each mercenary adds 1 to every army that already has 2 real members (`w` = wilds counted) |
+| `synergies(units)` | `{army: {n, w, lvl}}`; each Gaul adds 1 to every army that already has 2 real members (`w` = wilds counted) |
 | `newPlayer(opts)`, `tierOf`, `startTurn`, `refill`, `rollShop`, `buyUnit`, `sellUnit`, `moveUnit`, `mergeInto`, `levelUp`, `useItem`, `endTurn` | Shop-phase actions on a player state `P` |
 | `simulateBattle(teamA, teamB, seed)` | Deterministic battle; returns `{ev, result, rounds}` |
 | `botShop`, `arrange`, `makeOpponent(turn, rng, foe)` | Greedy bot that drafts through the same shop; `foe` restricts and tunes it |
@@ -61,7 +61,7 @@ view drains them with `flushFx()` to show floating text.
 | `collection(tab)`, `closeCollection` | The Collection screen (`#coll`): a DOM overlay with one tab per army plus items, built straight from `FACTIONS`, `UNITS` and `ITEMS`. Opened from the title and from the list button in the HUD; `G.coll` holds the open tab and pauses the battle clock while set |
 | `pickEntity`, pointer handlers, `act(src, dst)` | Input. Every shop action goes through `act` |
 | `enterTitle`, `enterShop`, `startRun`, `newSkirmish`, `endTurnFlow`, `showBanner`, `clearStage`, `boot` | Game flow |
-| `save`, `loadSave` | `localStorage`: `knightknight.v1` (skirmish run) and `knightknight.story.v1` (`{S, P}`: map progress plus the expedition in progress, if any) |
+| `save`, `loadSave` | `localStorage`: `knightknight.v1` (skirmish run) and `knightknight.story.v1` (`{S, P}`: map progress plus the expedition in progress, if any). `loadSave` maps ids that were renamed (`RENAMED`: `steppe`, `sellsword`, `barbarian`) so old saves keep working; add to it when renaming a unit or region key |
 
 Screen coordinates: `teamX(i)` and `TEAM_Y` for the army line, `shopX(j)`, `itemX(k)` and `HAND_Y`
 for the cards; `slotX(side, i)` and `FIELD_Y` for battle. `TEAM_Y` and `FIELD_Y` are where feet
@@ -119,7 +119,7 @@ while a battle is being skipped (`skipping()`) and respect `prefers-reduced-moti
   motion on the final blow, `BV.dead` holds flung corpses, unit views carry squash (`sx`, `sy`),
   knockback (`kx`) and `cheer`.
 - **Ambience**: `ambient(dt)` spawns fireflies and embers at camp and weather per battlefield
-  theme (`THEMES[key].amb`: snow, sand, petals, embers, seeds, leaves, dust).
+  theme (`THEMES[key].amb`: snow, sand, petals, embers, mist, leaves, dust).
 - **Sound**: `SFX` is synthesised (`tone` + filtered `noise`); `vary()` adds pitch variety and
   `coin` rises in pitch on a streak.
 
@@ -199,7 +199,7 @@ The replay runs on its own clock (`T.clock`), advanced by `tick(dt * speed)`. `w
 `G.S = {conquered[], at, intro}` is the campaign. A region is conquered by winning a short
 expedition: `storyRun(S, id)` builds the options for a fresh run (3 lives, `goal` = the region's
 `wins`, `fast` tiers, `pool` = units of every army owned so far, `bonus` gold = lands conquered).
-`storyFoe(P)` describes the rival: the region's army only (the mercenary region drafts from
+`storyFoe(P)` describes the rival: the region's army only (the Gauls' region drafts from
 everything), capped army size, shifted income, and the champion on the battle that would complete
 the goal. `makeOpponent` adds the champion after drafting, replacing the weakest unit if the army
 is full; it carries `boss:true` into the battle snapshot so the view can crown it.
