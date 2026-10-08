@@ -82,8 +82,6 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
 .lbl{font-size:max(9px,calc(var(--u)*5));color:#a8b5b2;text-shadow:0 calc(var(--u)*.75) 0 #090a14;white-space:nowrap}
 #lblFront{transform:translateX(-50%);color:#e8c170}
 #lblShop{left:calc(var(--u)*60);top:calc(var(--u)*167)}
-#lblShop.res{color:#73bed3}
-#lblPile{left:calc(var(--u)*24);top:calc(var(--u)*133);transform:translateX(-50%);color:#819796}
 #hand{inset:0}
 .cd{position:absolute;width:calc(var(--u)*28);text-align:center;line-height:1;white-space:nowrap;overflow:hidden;color:#241527;transform-origin:calc(var(--u)*14) calc(var(--u)*-2)}
 .cd b{display:block;font-weight:400;font-size:calc(var(--u)*5.4)}
@@ -125,6 +123,7 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
 .fl.ab{color:#ebede9;font-size:calc(var(--u)*6.5);animation-duration:1.1s}
 .fl.syn{color:var(--c,#73bed3);font-size:calc(var(--u)*8)}
 .fl.block{color:#73bed3}
+.fl.ice{color:#a4dddb}
 .fl.big{font-size:calc(var(--u)*14);color:#e8c170;animation-duration:1.8s}
 .fl.err{color:#cf573c;font-size:calc(var(--u)*9);animation-duration:1.3s}
 @keyframes rise{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.45)}24%{transform:translate(-50%,-50%) scale(1)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-190%) scale(1)}}
@@ -234,7 +233,6 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
     <div id="info" class="hide"></div>
     <div id="lblFront" class="lbl hide">FRONT</div>
     <div id="lblShop" class="lbl hide"></div>
-    <div id="lblPile" class="lbl hide"></div>
     <div id="hand" class="hide"></div>
     <div id="sellzone" class="hide"></div>
     <div id="shopbar" class="hide">
@@ -267,7 +265,7 @@ img.ic{width:calc(var(--u)*9);height:calc(var(--u)*9);image-rendering:pixelated;
 'use strict';
 //#region LOGIC ============================================================
 // Pure game rules: no DOM in this region (it is also run headless for balance sims).
-const CAP = 50, COST = 3, LIVES = 5, WINS = 10, RESERVE_COST = 1, RESERVE_MAX = 4;
+const CAP = 50, COST = 3, LIVES = 5, WINS = 10;
 
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function makeRng(seed){
@@ -400,14 +398,14 @@ function synergies(units){
 const tierOf = P => Math.min(6, P.fast ? P.turn : Math.floor((P.turn+1)/2));
 const shopSize = T => T>=5?5:T>=3?4:3;
 const itemSlots = T => T>=3?2:1;
-function newPlayer(o){ o=o||{}; return {gold:10,turn:1,lives:o.lives||LIVES,goal:o.goal||WINS,wins:0,team:[null,null,null,null,null],shop:[],items:[],reserve:[],fx:[],pool:o.pool||null,fast:!!o.fast,bonus:o.bonus||0,story:o.story||null,cap:o.cap||5,noRes:!!o.noRes}; }
+function newPlayer(o){ o=o||{}; return {gold:10,turn:1,lives:o.lives||LIVES,goal:o.goal||WINS,wins:0,team:[null,null,null,null,null],shop:[],items:[],fx:[],pool:o.pool||null,fast:!!o.fast,bonus:o.bonus||0,story:o.story||null,cap:o.cap||5}; }
 function canMerge(a,b){return a&&b&&a!==b&&a.key===b.key&&lvlOf(a)<3}
 
 function refill(P,rng){
   const T=tierOf(P), all=P.pool||UNIT_KEYS, ipool=ITEM_KEYS.filter(k=>ITEMS[k].tier<=T);
   let pool=all.filter(k=>UNITS[k].tier<=T); if(!pool.length) pool=all;
-  P.shop=[]; while(P.shop.length<shopSize(T)) P.shop.push({u:mkUnit(rng.pick(pool))});
-  P.items=[]; while(P.items.length<itemSlots(T)) P.items.push({item:rng.pick(ipool),id:UID++});
+  P.shop=P.shop.filter(s=>s.frozen); while(P.shop.length<shopSize(T)) P.shop.push({u:mkUnit(rng.pick(pool)),frozen:false});
+  P.items=P.items.filter(s=>s.frozen); while(P.items.length<itemSlots(T)) P.items.push({item:rng.pick(ipool),frozen:false,id:UID++});
 }
 function startTurn(P,rng){
   const s=synergies(P.team).medieval, tithe=[0,1,3][s?s.lvl:0], tribute=P.turn===1?P.bonus||0:0;
@@ -417,20 +415,12 @@ function startTurn(P,rng){
   refill(P,rng);
 }
 function rollShop(P,rng){ if(P.gold<1) return false; P.gold--; refill(P,rng); return true; }
-// The reserve: pay a gold to set a card from the shop (`list` is P.shop or P.items) aside. Rolls and new
-// turns leave it alone, and it still costs its full price when it is finally played.
-function reserveCard(P,list,i){
-  const e=list[i]; if(!e||P.gold<RESERVE_COST||P.reserve.length>=RESERVE_MAX) return false;
-  P.gold-=RESERVE_COST; list.splice(i,1); delete e.bonus; delete e.seen; P.reserve.push(e); return true;
-}
-// Throwing a reserved card away frees its place. The gold paid to reserve it is not returned.
-function discardReserve(P,i){ if(!P.reserve[i]) return false; P.reserve.splice(i,1); return true; }
 function levelUp(P,t,rng){
   P.fx.push({k:'level',uid:t.uid});
   if(P.shop.length<6){
     // bonus recruit from the next tier up (or the best the pool has, when an army skips that tier)
     const T=Math.min(6,tierOf(P)+1), all=(P.pool||UNIT_KEYS).filter(k=>UNITS[k].tier<=T), top=Math.max(...all.map(k=>UNITS[k].tier));
-    P.shop.push({u:mkUnit(rng.pick(all.filter(k=>UNITS[k].tier===top))),bonus:true});
+    P.shop.push({u:mkUnit(rng.pick(all.filter(k=>UNITS[k].tier===top))),frozen:false,bonus:true});
   }
 }
 function mergeInto(P,t,inc,rng){
@@ -448,12 +438,11 @@ function makeRoom(P,slot){
   t[slot]=null; return true;
 }
 function canBuyInto(P,u,slot){ return canMerge(P.team[slot],u) || P.team.includes(null); }
-// `from` is the list the card sits in: the shop by default, P.reserve for a card played from the reserve
-function buyUnit(P,si,slot,rng,from){
-  const L=from||P.shop, s=L[si]; if(!s||!s.u||P.gold<COST) return null;
+function buyUnit(P,si,slot,rng){
+  const s=P.shop[si]; if(!s||P.gold<COST) return null;
   const u=s.u, t=P.team[slot]; let res;
-  if(canMerge(t,u)){ P.gold-=COST; L.splice(si,1); mergeInto(P,t,u,rng); res=t; }
-  else{ if(!makeRoom(P,slot)) return null; P.gold-=COST; L.splice(si,1); P.team[slot]=u; res=u; }
+  if(canMerge(t,u)){ P.gold-=COST; P.shop.splice(si,1); mergeInto(P,t,u,rng); res=t; }
+  else{ if(!makeRoom(P,slot)) return null; P.gold-=COST; P.shop.splice(si,1); P.team[slot]=u; res=u; }
   const h=UNITS[res.key].shop; if(h&&h.buy) h.buy(res,P,rng);
   return res;
 }
@@ -474,14 +463,14 @@ function canUseItem(P,key,slot){
   if(!u) return false;
   return !(key==='manual'&&lvlOf(u)>=3);
 }
-function useItem(P,ii,slot,rng,from){
-  const L=from||P.items, s=L[ii]; if(!s||!s.item||P.gold<COST||!canUseItem(P,s.item,slot)) return false;
+function useItem(P,ii,slot,rng){
+  const s=P.items[ii]; if(!s||P.gold<COST||!canUseItem(P,s.item,slot)) return false;
   const u=P.team[slot], it=ITEMS[s.item];
   if(it.gear){ u.gear=s.item; P.fx.push({k:'text',uid:u.uid,text:it.name}); }
   else if(s.item==='ration') pbuff(P,u,1,1);
   else if(s.item==='feast') rng.shuffle(P.team.filter(Boolean)).slice(0,3).forEach(x=>pbuff(P,x,1,1));
   else if(s.item==='manual'){ const b=lvlOf(u); u.xp++; P.fx.push({k:'text',uid:u.uid,text:'+1 XP'}); if(lvlOf(u)>b) levelUp(P,u,rng); }
-  P.gold-=COST; L.splice(ii,1); return true;
+  P.gold-=COST; P.items.splice(ii,1); return true;
 }
 function endTurn(P,rng){
   P.team.forEach((u,i)=>{ if(!u) return; const h=UNITS[u.key].shop; if(h&&h.endTurn) h.endTurn(u,P,rng,i); });
@@ -582,51 +571,34 @@ function arrange(P){
   const us=P.team.filter(Boolean).sort((a,b)=>UNITS[a.key].pos-UNITS[b.key].pos||b.hp-a.hp);
   P.team=[0,1,2,3,4].map(i=>us[i]||null);
 }
-// With gold left that cannot buy a card, the bot sets aside the shop card it would most like to see again:
-// a twin of something it fields, the second half of a pair it is collecting, or a strong favoured unit.
-function botReserve(P,fav){
-  if(P.gold<RESERVE_COST||P.reserve.length>=RESERVE_MAX) return false;
-  const T=tierOf(P); let best=-1, bs=5, list=null; const want=(sc,i,L)=>{ if(sc>bs){ bs=sc; best=i; list=L; } };
-  P.shop.forEach((s,i)=>{ const d=UNITS[s.u.key];
-    want(P.team.some(x=>canMerge(x,s.u))?10+d.tier:P.reserve.some(r=>r.u&&r.u.key===s.u.key)?7:(d.faction===fav||d.faction==='merc')&&d.tier>=T-1?4+d.tier*.5:0,i,P.shop); });
-  P.items.forEach((s,i)=>{ const it=ITEMS[s.item]; want(it.gear&&P.team.some(x=>x&&!x.gear)?4+it.tier*.5:s.item==='manual'?6:0,i,P.items); });
-  return best>=0&&reserveCard(P,list,best);
-}
-// `P.noRes` switches the reserve off for this bot (tools/reserve.js compares the two).
 function botShop(P,rng,fav){
-  let guard=0; const res=P.noRes?[]:P.reserve;
-  // a reserved unit that fell two tiers behind without finding its twin is not coming out again
-  for(let i=res.length-1;i>=0;i--){ const s=res[i]; if(s.u&&UNITS[s.u.key].tier<tierOf(P)-2&&!P.team.some(x=>canMerge(x,s.u))) discardReserve(P,i); }
+  let guard=0;
   while(guard++<80){
     let best=null; const consider=c=>{if(!best||c.sc>best.sc)best=c};
     if(P.gold>=COST){
-      const unit=(s,i,from)=>{
-        const d=UNITS[s.u.key], base=d.tier*2+(d.faction===fav||d.faction==='merc'?5:0)+rng()*2+(from===P.shop?0:1);
+      P.shop.forEach((s,i)=>{
+        const d=UNITS[s.u.key], base=d.tier*2+(d.faction===fav||d.faction==='merc'?5:0)+rng()*2;
         const dup=P.team.findIndex(x=>canMerge(x,s.u)), empty=P.team.filter(Boolean).length<P.cap?P.team.indexOf(null):-1;
-        if(dup>=0) consider({k:'buy',i,from,slot:dup,sc:base+5});
-        else if(empty>=0) consider({k:'buy',i,from,slot:empty,sc:base+4});
+        if(dup>=0) consider({k:'buy',i,slot:dup,sc:base+5});
+        else if(empty>=0) consider({k:'buy',i,slot:empty,sc:base+4});
         else{
           let w=-1,wv=1e9; P.team.forEach((x,j)=>{if(!x)return;const v=unitValue(x,fav);if(v<wv){wv=v;w=j}});
-          const nv=unitValue(s.u,fav); if(nv>wv+1) consider({k:'swap',i,from,slot:w,sc:base+(nv-wv)*.5});
+          const nv=unitValue(s.u,fav); if(nv>wv+1) consider({k:'swap',i,slot:w,sc:base+(nv-wv)*.5});
         }
-      };
-      const item=(s,i,from)=>{
+      });
+      if(P.team.filter(Boolean).length>=3) P.items.forEach((s,i)=>{
         const it=ITEMS[s.item]; let slot=-1,sc=3,bv=-1;
         if(it.gear){ P.team.forEach((x,j)=>{if(x&&!x.gear&&x.atk+x.hp>bv){bv=x.atk+x.hp;slot=j}}); sc=5+it.tier; }
         else if(s.item==='manual'){ P.team.forEach((x,j)=>{if(x&&lvlOf(x)<3&&x.xp*10+x.atk+x.hp>bv){bv=x.xp*10+x.atk+x.hp;slot=j}}); sc=6; }
         else if(s.item==='feast'){ slot=P.team.findIndex(Boolean); sc=7; }
         else slot=rng.pick(P.team.map((x,j)=>x?j:-1).filter(j=>j>=0));
-        if(slot>=0) consider({k:'item',i,from,slot,sc:sc+rng()});
-      };
-      const some=P.team.filter(Boolean).length>=3;
-      P.shop.forEach((s,i)=>unit(s,i,P.shop)); if(some) P.items.forEach((s,i)=>item(s,i,P.items));
-      res.forEach((s,i)=>{ if(s.u) unit(s,i,res); else if(some) item(s,i,res); });
+        if(slot>=0) consider({k:'item',i,slot,sc:sc+rng()});
+      });
     }
     if(best){
-      if(best.k==='item') useItem(P,best.i,best.slot,rng,best.from);
-      else{ if(best.k==='swap') sellUnit(P,best.slot,rng); buyUnit(P,best.i,best.slot,rng,best.from); }
-    } else if(!P.noRes&&P.gold<COST&&botReserve(P,fav)){}
-    else if(!rollShop(P,rng)) break;
+      if(best.k==='item') useItem(P,best.i,best.slot,rng);
+      else{ if(best.k==='swap') sellUnit(P,best.slot,rng); buyUnit(P,best.i,best.slot,rng); }
+    } else if(!rollShop(P,rng)) break;
     P.fx.length=0;
   }
   arrange(P);
@@ -640,10 +612,10 @@ const ARMY_NAMES = {
   japan:['Crane Clan','Moonlit Blades','Tiger Shogunate','The Forty-Seven'],
   merc:['The Free Company','Caravan Guard','Blades for Hire','The Coin Brothers'],
 };
-// foe (optional): {fav, pool, fast, cap (army size), gold (delta per turn), noRes (never reserve), boss:{key,name,bonus}}
+// foe (optional): {fav, pool, fast, cap (army size), gold (delta per turn), boss:{key,name,bonus}}
 function makeOpponent(turn,rng,foe){
   foe=foe||{};
-  const fav=foe.fav||rng.pick(REAL_F), P=newPlayer({pool:foe.pool,fast:foe.fast,cap:foe.cap,noRes:foe.noRes}), waste=foe.gold!=null?-foe.gold:rng.int(3);
+  const fav=foe.fav||rng.pick(REAL_F), P=newPlayer({pool:foe.pool,fast:foe.fast,cap:foe.cap}), waste=foe.gold!=null?-foe.gold:rng.int(3);
   for(let t=1;t<=turn;t++){ P.turn=t; startTurn(P,rng); P.gold=Math.max(3,P.gold-waste); botShop(P,rng,fav); endTurn(P,rng); P.fx.length=0; }
   // name the army after whatever it actually ended up fielding
   const n={}; P.team.forEach(u=>{ if(u){ const f=UNITS[u.key].faction; if(f!=='merc') n[f]=(n[f]||0)+1; } });
@@ -697,12 +669,9 @@ function storyPath(S,to){
 
 // ============================== VIEW ======================================
 const W=320, H=180, TEAM_Y=90, HAND_Y=136, FIELD_Y=128, CARD_W=34, CARD_H=46, PITCH=36;
-// The shop is a hand of cards in one row: the reserve pile on the left, then recruits, a small gap and
-// supplies, centred in what is left. HAND_Y is the middle of a card. The pitch tightens when eight cards
-// have to fit. Opening the reserve swaps the row for the reserved cards (resX).
-const PILE_X=24, HAND_L=46;
-function rowX(n,a,b){ const m=a+b, gap=a&&b?8:0, room=W-4-HAND_L, pitch=Math.min(PITCH,Math.floor((room-CARD_W-gap)/Math.max(1,m-1))); return Math.round(HAND_L+(room-(m-1)*pitch-CARD_W-gap)/2+CARD_W/2+n*pitch+(n>=a?gap:0)); }
-const handX=n=>rowX(n,G.P.shop.length,G.P.items.length), resX=n=>rowX(n,G.P.reserve.length,0);
+// The shop is a hand of cards in one centred row: recruits, a small gap, then supplies.
+// HAND_Y is the middle of a card; handX(n) is the centre of the n-th card of the row.
+const handX=n=>{ const a=G.P.shop.length, b=G.P.items.length, gap=a&&b?8:0; return (W-(a+b)*PITCH+2-gap)/2+CARD_W/2+n*PITCH+(n>=a?gap:0); };
 const teamX=i=>210-i*30, shopX=j=>handX(j), itemX=k=>handX(G.P.shop.length+k);
 const slotX=(side,i)=>side?174+i*25:146-i*25;
 const $=id=>document.getElementById(id);
@@ -713,7 +682,7 @@ const CALM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rnd=(a,b)=>a+Math.random()*(b-a);
 
 const G={screen:'load',mode:'skirmish',time:0,P:null,S:null,rng:makeRng((Date.now()^(Math.random()*1e9))|0),sel:null,hover:null,drag:null,press:null,busy:false,after:null,opp:null,muted:false,
-  theme:'dusk',coll:null,res:{open:false,o:0},trans:null,sh:null,demo:false,runOver:true,map:{sel:null,x:0,y:0,path:null,seq:0,fresh:null}};
+  theme:'dusk',coll:null,trans:null,sh:null,demo:false,runOver:true,map:{sel:null,x:0,y:0,path:null,seq:0,fresh:null}};
 
 // ---------- pixel assets ----------
 const PAL={k:'#090a14',w:'#ebede9',s:'#c7cfcc',g:'#a8b5b2',G:'#577277',y:'#e8c170',o:'#de9e41',O:'#be772b',b:'#884b2b',n:'#7a4841',r:'#a53030',R:'#752438',p:'#cf573c',u:'#4f8fba',U:'#3c5e8b',d:'#253a5e',t:'#e7d5b3'};
@@ -769,7 +738,7 @@ function buildSprites(img){
   };
   for(const k in UNITS){ const d=UNITS[k]; SPR[k]={n:cut(d.sx,d.sy),w:cut(d.sx,d.sy,'white'),m:cut(d.sx,d.sy,'mummy')}; }
 }
-const sprURL=k=>SURL[k]||(SURL[k]=SPR[k].n.toDataURL()), icURL=k=>SURL['ic_'+k]||(SURL['ic_'+k]=ICON[k].toDataURL());
+const sprURL=k=>SURL[k]||(SURL[k]=SPR[k].n.toDataURL());
 function loadImage(src){return new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=src})}
 // characters.PNG next to this file wins (so the art stays editable); the embedded copy is the
 // fallback for file:// where browsers refuse pixel access to local images.
@@ -951,7 +920,7 @@ function anim(id,k,delay){ if(!G.demo&&id!=null) AN.set(id,{k,t0:G.time+(delay||
 const bounce=p=>{ const n=7.5625,d=2.75; return p<1/d?n*p*p:p<2/d?n*(p-=1.5/d)*p+.75:p<2.5/d?n*(p-=2.25/d)*p+.9375:n*(p-=2.625/d)*p+.984375; };
 function animOf(id){
   const a=AN.get(id), o={dx:0,dy:0,sx:1,sy:1,al:1,rot:0}; if(!a) return o;
-  const t=G.time-a.t0, D={deal:340,pop:300,land:260,hop:260,shake:300}[a.k], p=t/D;
+  const t=G.time-a.t0, D={deal:340,pop:300,land:260,hop:260,shake:300,chill:260,snap:220}[a.k], p=t/D;
   if(t<0){ if(a.k==='deal') o.al=0; return o; }
   if(p>=1){ AN.delete(id); return o; }
   const e=(1-p)*(1-p);
@@ -960,9 +929,36 @@ function animOf(id){
   else if(a.k==='land'){ o.sy=1-.32*e*Math.cos(p*9); o.sx=1+.26*e*Math.cos(p*9); }
   else if(a.k==='hop'){ o.dy=-Math.sin(p*Math.PI)*6; }
   else if(a.k==='shake'){ o.dx=Math.sin(p*28)*2.5*(1-p); }
+  else if(a.k==='chill'){ o.dx=(t/24|0)%2?1:-1; }
+  else if(a.k==='snap'){ o.sx=o.sy=1+.14*e*Math.cos(p*10); }
   return o;
 }
 const idOf=e=>e&&(e.uid||(e.u&&e.u.uid)||e.id);
+
+// Ice on a frozen card. ICE holds the moment a card was frozen while its frost is still creeping in, GLINT
+// the start of a one-off shine. FROST is the rime: pixels along the rim, each with the moment it sets.
+const ICE=new Map(), GLINT=new Map(), FROST=[];
+{ const r=makeRng(77); for(let y=1;y<45;y++) for(let x=1;x<33;x++){ const d=Math.min(x-1,32-x,y-1,44-y); if(d>4||(y>36&&d)||(x<9&&y<9)||r()>[.55,.6,.4,.22,.1][d]) continue; FROST.push({x,y,th:(d+r())/5,c:d<2&&r()<.6?'#ebede9':'#a4dddb'}); } }
+function glint(id,delay){ if(!G.demo&&!CALM) GLINT.set(id,G.time+(delay||0)); }
+// the frost has set: a ring of cold, a few crystals and a shine across the ice
+function frosted(x,y,id){ ring(x,y,'#a4dddb',27,340); sparkle(x,y-12,['#ebede9','#a4dddb'],8); glint(id); anim(id,'snap'); shake(.7,90); }
+// how far the frost has crept over a card drawn at o (0 to 1)
+function iceOf(id,o){
+  const t=ICE.get(id); if(t==null) return 1;
+  const p=(G.time-t)/260; if(p<1) return Math.max(.05,p);
+  ICE.delete(id); frosted(o.x,o.y,id); return 1;
+}
+// where the shine is on its way across a card (0 to 1), or null. Frozen cards shine by themselves now and then.
+function glintOf(id){
+  const t=GLINT.get(id); if(t!=null){ const p=(G.time-t)/380; if(p<1) return p<0?null:p; GLINT.delete(id); }
+  if(G.demo||CALM) return null; const p=((G.time+id*731)%3400)/420; return p<1?p:null;
+}
+// ice breaking off a card: shards from the rim, and the icicles drop
+function shatter(x,y){
+  sfx('thaw'); spark(x,y,'#ebede9');
+  for(let i=0;i<22;i++){ const dx=i%2?rnd(-17,17):i%4?17:-17, dy=i%2?(i%4===1?-23:23):rnd(-23,23); part({x:x+dx,y:y+dy,vx:dx*.003+rnd(-.03,.03),vy:rnd(-.1,-.02),g:.0005,life:rnd(380,640),col:['#ebede9','#a4dddb','#73bed3'][i%3],size:i%3?1:2,fade:150}); }
+  for(const ix of [4,9,15,21,27]) part({x:x-17+ix,y:y+24,vx:0,vy:.03,g:.0006,life:400,col:'#a4dddb',fade:120});
+}
 
 function campfire(x,y){
   g.fillStyle='#4d2b32'; g.fillRect(x-4,y,9,2); g.fillStyle='#341c27'; g.fillRect(x-3,y+1,7,1);
@@ -1017,7 +1013,7 @@ function cardBg(f){
   }
   return CARD_BG[f]=c;
 }
-// A shop card around its centre. o: {x,y,e (shop entry),rot,sx,sy,alpha,dim,glow,twin ('army'|'res')}
+// A shop card around its centre. o: {x,y,e (shop entry),rot,sx,sy,alpha,dim,glow,merge (it has a twin in the army)}
 // The face is painted flat on a scratch canvas and then blitted, so a tilted or squashed card keeps hard pixels.
 // Card rows: 0 outline, 1 frame, 3-22 art, 24-42 parchment (name and ability are DOM text, see cardLabels), 44 frame.
 const CARDC=mkCanvas(CARD_W+4,CARD_H+6), cg=CARDC.getContext('2d');
@@ -1035,17 +1031,22 @@ function drawCard(o){
     if(s){ cg.drawImage(s.n,0,0,18,11,10,7+bob,18,11); cg.drawImage(s.n,0,11,18,7,10,18,18,7); }
     badge(4,38,u.atk,'#577277',false,cg); badge(34,38,u.hp,'#a53030',true,cg);
   } else cg.drawImage(ICON[e.item],14,9+((G.time/500+e.id|0)%2));
+  // ice: a cold tint, rime creeping in from the rim, snow on the top edge, icicles, and now and then a shine
+  if(e.frozen){
+    const id=idOf(e), k=iceOf(id,o), q=1-(1-k)*(1-k), sh=glintOf(id);
+    R(1,1,32,44,`rgba(164,221,219,${(.26*q).toFixed(2)})`);
+    for(const f of FROST) if(q>=f.th) R(f.x,f.y,1,1,f.c);
+    if(q>.5){ R(1,0,32,1,'#ebede9'); R(0,1,34,1,'#ebede9'); }
+    [[4,3],[9,2],[15,4],[21,2],[27,3]].forEach(([ix,ih])=>{ const h=Math.round(ih*q); if(!h) return; R(ix,45,2,1,'#a4dddb'); R(ix,46,1,h,'#a4dddb'); R(ix,46,1,1,'#ebede9'); });
+    if(sh!=null) for(let y=1;y<45;y++) for(const [dx,w,al] of [[0,3,.5],[-6,1,.3]]){ const x=Math.round(-4+sh*62-y*.45)+dx, x0=Math.max(1,x), x1=Math.min(33,x+w); if(x1>x0) R(x0,y,x1-x0,1,`rgba(235,237,233,${al})`); }
+  }
   // price: a coin on the corner
   R(1,-1,5,9,'#090a14'); R(0,0,7,7,'#090a14'); R(-1,1,9,5,'#090a14');
   R(1,0,5,7,'#de9e41'); R(0,1,7,5,'#de9e41'); R(1,0,4,6,'#e8c170'); R(0,1,6,4,'#e8c170');
   digits(COST,4,3,o.dim?'#a53030':'#602c2c',cg);
   if(o.dim) R(1,1,32,44,'rgba(9,10,20,.42)');
-  // twin tag: gold arrow = buying it merges with a unit you field, blue stack = its twin waits in the reserve
-  if(o.twin){
-    R(28,-1,5,9,'#090a14'); R(27,0,7,7,'#090a14'); R(26,1,9,5,'#090a14');
-    const c=o.twin==='army'?'#e8c170':'#73bed3', k=o.twin==='army'?'#602c2c':'#172038'; R(28,0,5,7,c); R(27,1,7,5,c);
-    if(o.twin==='army'){ R(30,1,1,5,k); R(29,2,3,1,k); R(28,3,5,1,k); } else { R(28,2,5,1,k); R(28,4,5,1,k); }
-  }
+  // a gold arrow on the corner: buying this merges it with a unit you field
+  if(o.merge){ R(28,-1,5,9,'#090a14'); R(27,0,7,7,'#090a14'); R(26,1,9,5,'#090a14'); R(28,0,5,7,'#e8c170'); R(27,1,7,5,'#e8c170'); R(30,1,1,5,'#602c2c'); R(29,2,3,1,'#602c2c'); R(28,3,5,1,'#602c2c'); }
   g.save(); g.translate(Math.round(o.x),Math.round(o.y)); if(o.rot) g.rotate(o.rot); g.scale(o.sx||1,o.sy||1);
   g.globalAlpha=o.alpha==null?1:Math.max(0,Math.min(1,o.alpha));
   g.drawImage(CARDC,-CARD_W/2-2,-CARD_H/2-2);
@@ -1069,25 +1070,16 @@ function brackets(x,y){ const o=(G.time/250|0)%2; corners(x-14-o,x+13+o,y-23-o,y
 function arrowDown(x,y,col){ const b=(G.time/180|0)%2; g.fillStyle='#090a14'; g.fillRect(x-3,y-1+b,7,3); g.fillRect(x-2,y+2+b,5,1); g.fillRect(x-1,y+3+b,3,1); g.fillStyle=col; g.fillRect(x-2,y+b,5,1); g.fillRect(x-1,y+1+b,3,1); g.fillRect(x,y+2+b,1,1); }
 
 const same=(a,b)=>!!a&&!!b&&a.type===b.type&&a.i===b.i;
-const entityAt=h=>!h||!G.P?null:h.type==='team'?G.P.team[h.i]:h.type==='shop'?G.P.shop[h.i]:h.type==='item'?G.P.items[h.i]:h.type==='res'?G.P.reserve[h.i]:null;
+const entityAt=h=>!h||!G.P?null:h.type==='team'?G.P.team[h.i]:h.type==='shop'?G.P.shop[h.i]:h.type==='item'?G.P.items[h.i]:null;
 const activeSrc=()=>G.drag&&G.drag.moved?G.drag.src:(G.sel&&G.sel.type!=='faction'?G.sel:null);
 function targetOK(src,i){
   const P=G.P; if(!src||!entityAt(src)) return false;
   if(src.type==='shop') return P.gold>=COST&&canBuyInto(P,P.shop[src.i].u,i);
   if(src.type==='team') return src.i!==i;
   if(src.type==='item') return P.gold>=COST&&canUseItem(P,P.items[src.i].item,i);
-  if(src.type==='res'){ const e=P.reserve[src.i]; return P.gold>=COST&&(e.u?canBuyInto(P,e.u,i):canUseItem(P,e.item,i)); }
   return false;
 }
-const CX=new Map(), GHOST=[], FLY=[]; let handT=0;
-const outBack=q=>{ const r=q-1; return 1+2.7*r*r*r+1.7*r*r; };
-// the empty place where the reserve pile sits
-function tray(col){
-  const l=PILE_X-17, t=HAND_Y-23; g.fillStyle='rgba(9,10,20,.42)'; g.fillRect(l+1,t+1,32,44); g.fillStyle=col;
-  for(let k=1;k<33;k+=4){ g.fillRect(l+k,t,2,1); g.fillRect(l+k,t+45,2,1); } for(let k=2;k<44;k+=4){ g.fillRect(l,t+k,1,2); g.fillRect(l+33,t+k,1,2); }
-}
-// A card landing on the pile: thump, dust, and the pile squashes under it.
-function stowLand(){ sfx('land'); sfx('coin'); dust(PILE_X,HAND_Y+22,7,'#e7d5b3'); ring(PILE_X,HAND_Y,'#e8c170',24,320); sparkle(PILE_X,HAND_Y-10,['#e8c170','#ebede9'],6); anim('pile','land'); shake(.9,110); }
+const CX=new Map(), GHOST=[], GONE=[]; let handT=0;
 function renderShop(){
   const P=G.P, src=activeSrc(), dragging=G.drag&&G.drag.moved?G.drag:null, blink=(G.time/300|0)%2;
   g.drawImage(BG.camp,0,0); twinkles(); campfire(40,104);
@@ -1098,62 +1090,34 @@ function renderShop(){
     if(u&&!(dragging&&same(dragging.src,{type:'team',i}))){ const a=animOf(u.uid); drawUnit({key:u.key,x:x+a.dx,y:TEAM_Y-2+a.dy-(hv?1:0),sx:a.sx,sy:a.sy,alpha:a.al,phase:u.uid,atk:u.atk,hp:u.hp,lvl:lvlOf(u),xp:u.xp,gear:u.gear}); }
     if(same(G.sel,{type:'team',i})) brackets(x,TEAM_Y);
   }
+  // sold units: a white shape whisked up off its slab
+  for(let i=GONE.length-1;i>=0;i--){ const q=GONE[i], p=(G.time-q.t0)/200; if(p>=1){ GONE.splice(i,1); continue; } drawUnit({key:q.key,x:q.x,y:TEAM_Y-2-p*p*16,flash:true,sx:1-p*.7,sy:1+p*.9,alpha:1-p*p}); }
   const ax=teamX(0)+17+((G.time/400|0)%2); g.fillStyle='#e8c170'; g.fillRect(ax,TEAM_Y-12,1,5); g.fillRect(ax+1,TEAM_Y-11,1,3); g.fillRect(ax+2,TEAM_Y-10,1,1);
-  const R=G.res, dt=G.time-handT, ease=G.demo||CALM?1:Math.min(1,dt*.02), labels=[], dim=P.gold<COST, nr=P.reserve.length; handT=G.time;
-  // R.o runs from 0 (the hand is showing) to 1 (the reserve is spread out in its place)
-  R.o=G.demo||CALM?+R.open:Math.max(0,Math.min(1,R.o+(R.open?dt:-dt)/260));
-  if(R.o>0){ g.fillStyle=`rgba(9,10,20,${(.5*R.o).toFixed(2)})`; g.fillRect(HAND_L-3,HAND_Y-27,W,54); g.globalAlpha=R.o; g.fillStyle='#4f8fba'; g.fillRect(HAND_L-3,HAND_Y-28,W,1); g.fillRect(HAND_L-3,HAND_Y+27,W,1); g.globalAlpha=1; }
-  // twins: what a card would merge with. `pileTwin` = the shop is offering the twin of something in the reserve.
-  const inTeam=u=>P.team.some(t=>canMerge(t,u)), twinOf=u=>inTeam(u)?'army':P.reserve.some(r=>r.u&&r.u!==u&&r.u.key===u.key)?'res':null;
-  const onOffer=e=>!!e.u&&P.shop.some(s=>s.u.key===e.u.key), pileTwin=P.reserve.some(onOffer);
-  // the pile's place: a drop target for cards from the hand
-  const canStow=dragging&&(dragging.src.type==='shop'||dragging.src.type==='item')&&P.gold>=RESERVE_COST&&nr<RESERVE_MAX;
-  // gold left that cannot buy a card can still reserve one: a coin bobs over the pile to say so
-  const nudge=!dragging&&!R.open&&!G.busy&&P.gold>=RESERVE_COST&&P.gold<COST&&nr<RESERVE_MAX&&P.shop.length+P.items.length>0;
-  tray(canStow||(nudge&&blink)?(blink?'#e8c170':'#de9e41'):same(G.hover,{type:'pile',i:0})?'#a8b5b2':'#577277');
-  if(canStow) arrowDown(PILE_X,HAND_Y-36,'#e8c170');
-  if(nudge){ const b=(G.time/180|0)%2; g.drawImage(ICON.coin,PILE_X-4,HAND_Y-47+b); arrowDown(PILE_X,HAND_Y-36,'#e8c170'); }
-  // the hand: cards slide to their place as the row re-centres, lift on hover and when selected, and duck away while the reserve is open
+  // the hand: cards slide to their place as the row re-centres, lift on hover and when selected
   const cards=[...P.shop.map((s,j)=>({s,id:s.u.uid,h:{type:'shop',i:j}})),...P.items.map((s,k)=>({s,id:s.id,h:{type:'item',i:k}}))];
+  const ease=G.demo||CALM?1:Math.min(1,(G.time-handT)*.02), labels=[], dim=P.gold<COST; handT=G.time;
   for(const id of CX.keys()) if(!cards.some(c=>c.id===id)) CX.delete(id);
   cards.forEach((c,n)=>{
     const tx=handX(n), px=CX.get(c.id), x=px==null||Math.abs(tx-px)<.6?tx:px+(tx-px)*ease, rx=Math.round(x); CX.set(c.id,x);
-    if(R.o>=1) return;
     if(dragging&&same(dragging.src,c.h)){ g.fillStyle='rgba(9,10,20,.3)'; g.fillRect(rx-16,HAND_Y-22,32,44); return; }
-    const q=Math.max(0,Math.min(1,R.o*1.6-n*.08)), hv=same(G.hover,c.h)&&!dragging, sel=same(G.sel,c.h), a=animOf(c.id), y=HAND_Y-(sel?4:hv?2:0)+q*q*74;
-    const o={x:x+a.dx,y:y+a.dy,e:c.s,rot:a.rot+q*.25*(n%2?1:-1),sx:a.sx,sy:a.sy,alpha:a.al,dim,glow:c.s.bonus&&blink?'#e8c170':null,twin:c.s.u&&twinOf(c.s.u)};
-    if(a.al>=1&&!a.rot&&!R.o){ g.fillStyle='rgba(9,10,20,.4)'; g.fillRect(rx-15,HAND_Y-21+Math.max(0,a.dy),34,46); }
+    const hv=same(G.hover,c.h)&&!dragging, sel=same(G.sel,c.h), a=animOf(c.id), y=HAND_Y-(sel?4:hv?2:0);
+    const o={x:x+a.dx,y:y+a.dy,e:c.s,rot:a.rot,sx:a.sx,sy:a.sy,alpha:a.al,dim,glow:c.s.bonus&&blink?'#e8c170':null,merge:!!c.s.u&&P.team.some(t=>canMerge(t,c.s.u))};
+    if(a.al>=1&&!a.rot){ g.fillStyle='rgba(9,10,20,.4)'; g.fillRect(rx-15,HAND_Y-21+Math.max(0,a.dy),34,46); }
     drawCard(o); labels.push(o);
-    if(c.s.bonus&&!R.o&&Math.random()<.08) sparkle(x,y-18,'#e8c170',1);
+    if(c.s.bonus&&Math.random()<.08) sparkle(x,y-18,'#e8c170',1);
+    if(c.s.frozen&&!CALM&&Math.random()<.03) part({x:x+rnd(-15,15),y:HAND_Y+24,vx:rnd(-.004,.004),vy:rnd(.006,.018),life:rnd(500,900),col:'#a4dddb',fade:300});
     if(sel){ const k=(G.time/250|0)%2; corners(rx-19-k,rx+18+k,y-25-k,y+24+k); }
   });
-  // the reserve: a stack on the pile's place while closed, dealt out along the row when open. The newest card is on top and leaves first.
-  const pa=animOf('pile'), away=(e,i)=>FLY.some(f=>f.e===e)||(dragging&&same(dragging.src,{type:'res',i}));
-  let top=nr-1; while(top>=0&&away(P.reserve[top],top)) top--;
-  P.reserve.forEach((e,i)=>{
-    const h={type:'res',i}, back=nr-1-i;
-    if(away(e,i)) return;
-    const q=Math.max(0,Math.min(1,R.o*(1+.18*(nr-1))-back*.18)), k=outBack(q), hv=same(G.hover,h)&&!dragging&&q>=1, sel=same(G.sel,h);
-    const px=PILE_X-back*2, py=HAND_Y-back*2, x=px+(resX(i)-px)*k, y=py+(HAND_Y-py)*k-Math.sin(q*Math.PI)*12-(sel?4:hv?2:0), a=animOf(idOf(e));
-    const o={x:x+a.dx+(q?0:pa.dx),y:y+a.dy,e,rot:(1-q)*(q?-.5:0),sx:a.sx*(q?1:pa.sx),sy:a.sy*(q?1:pa.sy),dim,twin:e.u&&inTeam(e.u)?'army':null,glow:blink&&(q?onOffer(e):pileTwin&&i===top)?'#e8c170':null};
-    if(q>=1){ g.fillStyle='rgba(9,10,20,.4)'; g.fillRect(Math.round(x)-15,HAND_Y-21,34,46); }
-    drawCard(o); if(q>.5||i===top) labels.push(o);
-    if(sel){ const b=(G.time/250|0)%2, rx=Math.round(x); corners(rx-19-b,rx+18+b,y-25-b,y+24+b); }
-  });
-  if(pileTwin&&!R.o&&Math.random()<.06) sparkle(PILE_X,HAND_Y-16,'#e8c170',1);
-  if(nr&&R.o<.2&&!FLY.length) badge(PILE_X+18,HAND_Y-24,nr,nr>=RESERVE_MAX?'#a53030':'#3c5e8b',true);
-  // cards thrown away by a roll
-  for(let i=GHOST.length-1;i>=0;i--){ const q=GHOST[i], p=(G.time-q.t0)/240; if(p>=1){ GHOST.splice(i,1); continue; } if(p<0) continue;
-    const o={x:q.x,y:HAND_Y+p*p*64,e:q.e,rot:p*.5*(i%2?1:-1),alpha:1-p*p}; drawCard(o); labels.push(o); }
+  // cards thrown away by a roll: flicked up off the row, spinning, and gone below the screen
+  for(let i=GHOST.length-1;i>=0;i--){ const q=GHOST[i], p=(G.time-q.t0)/420; if(p>=1){ GHOST.splice(i,1); continue; } if(p<0){ const o={x:q.x,y:HAND_Y,e:q.e}; drawCard(o); labels.push(o); continue; }
+    if(!q.hit){ q.hit=1; sfx('card'); dust(q.x,HAND_Y+20,2,'#e7d5b3'); }
+    const o={x:q.x+q.dir*p*26,y:HAND_Y-72*p+152*p*p,e:q.e,rot:q.dir*p*1.5,alpha:p<.6?1:(1-p)/.4}; drawCard(o); labels.push(o); }
   drawParts(g,0);
-  // a card on its way to the pile: one full turn in the air, then it lands
-  for(let i=FLY.length-1;i>=0;i--){ const f=FLY[i], q=(G.time-f.t0)/f.ms; if(q>=1){ FLY.splice(i,1); stowLand(); continue; }
-    const k=q*q*(3-2*q), o={x:f.x0+(PILE_X-f.x0)*k,y:f.y0+(HAND_Y-f.y0)*k-Math.sin(q*Math.PI)*30,e:f.e,rot:-6.283*k,sx:1-.25*Math.sin(q*Math.PI),sy:1-.25*Math.sin(q*Math.PI)}; drawCard(o); labels.push(o); }
   if(dragging){
     // a card stays a card while it is over the hand and becomes the unit (or the item) once it is carried onto the field
     const e=entityAt(dragging.src), rot=Math.max(-.45,Math.min(.45,(dragging.vx||0)*.05));
     if(e&&dragging.card){ const o={x:dragging.x-dragging.ox,y:dragging.y-dragging.oy,e,rot:rot*.6}; drawCard(o); labels.push(o); }
-    else if(e&&e.item){ g.save(); g.translate(Math.round(dragging.x),Math.round(dragging.y)); g.rotate(rot); g.drawImage(ICON[e.item],-5,-5); g.restore(); }
+    else if(e&&dragging.src.type==='item'){ g.save(); g.translate(Math.round(dragging.x),Math.round(dragging.y)); g.rotate(rot); g.drawImage(ICON[e.item],-5,-5); g.restore(); }
     else if(e){ const u=e.u||e; drawUnit({key:u.key,x:dragging.x,y:dragging.y+5,shadow:dragging.y+14,rot,phase:u.uid}); }
   }
   cardLabels(labels);
@@ -1334,9 +1298,10 @@ function noise(dur,vol,freq,delay){
 const vary=f=>f*rnd(.94,1.06);   // a little pitch variety so repeats don't sound mechanical
 let coinN=0, coinT=0;
 const SFX={
-  click(){tone(vary(660),.04,'square',.03)}, buy(){tone(523,.07);tone(784,.1,'square',.04,0,.07);noise(.06,.05,900)}, sell(){tone(988,.06);tone(1319,.12,'square',.04,0,.06)},
+  click(){tone(vary(660),.04,'square',.03)}, buy(){tone(523,.07);tone(784,.1,'square',.04,0,.07);noise(.06,.05,900)}, sell(){tone(988,.06);tone(1319,.12,'square',.04,0,.06);noise(.1,.05,1400)},
   coin(){ const now=performance.now(); coinN=now-coinT<400?Math.min(coinN+1,8):0; coinT=now; tone(1047*Math.pow(1.06,coinN),.07,'square',.03); },
-  roll(){for(let i=0;i<4;i++) tone(300+i*90,.05,'triangle',.06,0,i*.045)}, fan(){for(let i=0;i<4;i++){noise(.05,.035,2600+i*500,i*.05);tone(420+i*70,.03,'triangle',.02,-150,i*.05)}}, stow(){noise(.16,.04,1800);tone(vary(700),.16,'sine',.03,-450)},
+  roll(){for(let i=0;i<4;i++) tone(300+i*90,.05,'triangle',.06,0,i*.045);noise(.14,.04,2600)}, freeze(){for(let i=0;i<5;i++) noise(.03,.035,5000+i*700,i*.045);tone(1175,.1,'sine',.04,400);tone(1760,.12,'sine',.04,0,.26);tone(2637,.22,'sine',.035,0,.3)},
+  thaw(){noise(.1,.08,6000);tone(vary(1500),.07,'square',.03,-900);[2400,1900,2800].forEach((f,i)=>tone(vary(f),.06,'sine',.025,-300,.07+i*.05))}, clink(){tone(vary(2200),.09,'sine',.03);tone(vary(3300),.07,'sine',.015,0,.02)},
   error(){tone(160,.14,'sawtooth',.04,-40)}, level(){[523,659,784,1047].forEach((f,i)=>tone(f,.11,'square',.04,0,i*.07))}, merge(){tone(440,.08,'triangle',.06,440);tone(880,.12,'square',.03,0,.08)},
   land(){noise(.07,.06,500);tone(vary(140),.06,'sine',.06,-50)}, card(){noise(.05,.035,vary(3200));tone(vary(520),.03,'triangle',.02,-200)}, pop(){tone(vary(500),.09,'triangle',.05,500);noise(.12,.04,2500)}, step(){noise(.03,.025,700)}, whoosh(){noise(.3,.05,1500);tone(300,.25,'sine',.02,600)},
   swing(){noise(.08,.03,3000)}, hit(){noise(.09,.09,1100);tone(vary(190),.09,'sawtooth',.05,-130)}, bighit(){noise(.2,.14,800);tone(vary(120),.2,'sawtooth',.08,-80);tone(60,.2,'sine',.1,-25)},
@@ -1379,10 +1344,8 @@ function refreshInfo(){
     const e=entityAt(h);
     if(h.type==='faction') html=factionInfo(h.i,(synergies(P.team)[h.i]||{n:0}).n);
     else if(e&&h.type==='team') html=unitInfo(e,`Sells for ${lvlOf(e)} gold.`);
-    else if(h.type==='pile') html=`<div class="nm"><span>Reserve</span><span class="lv">${P.reserve.length}/${RESERVE_MAX}</span></div><div class="ab">Set a card aside for <b>${RESERVE_COST}</b> gold. It waits here through rolls and turns, and still costs <b>${COST}</b> when you play it.</div><div class="hint">Drag a card here to reserve it. Click the pile to look through it, or to discard a card you no longer want.</div>`;
-    else if(e&&(h.type==='shop'||h.type==='item'||h.type==='res')){ const mate=e.u&&P.team.find(t=>canMerge(t,e.u)), it=ITEMS[e.item];
-      const twin=mate?` Merges with your ${UNITS[mate.key].name}.`:!e.u?'':h.type==='res'?(P.shop.some(s=>s.u.key===e.u.key)?' The shop is offering its twin.':''):P.reserve.some(r=>r.u&&r.u.key===e.u.key)?' Its twin is in your reserve.':'';
-      const cost=(h.type==='res'?`In reserve. Costs ${COST} gold to play. Select it to discard it.`:`Costs ${COST} gold, or ${RESERVE_COST} to reserve.`)+twin;
+    else if(e&&(h.type==='shop'||h.type==='item')){ const mate=e.u&&P.team.find(t=>canMerge(t,e.u)), it=ITEMS[e.item];
+      const cost=`Costs ${COST} gold.`+(e.frozen?' Frozen: it stays through rolls and into the next turn.':'')+(mate?` Merges with your ${UNITS[mate.key].name}.`:'');
       html=e.u?unitInfo(e.u,cost):`<div class="nm"><span>${it.name}</span></div><div class="sub">${it.gear?'Gear':'Supply'} · Tier ${it.tier}</div><div class="ab">${it.text}</div><div class="hint">${cost} ${it.noTarget?'Drop it on your army.':'Drop it on a unit.'}${it.gear?' A unit holds one piece of gear.':''}</div>`; }
   } else if(G.screen==='battle'&&h&&h.type==='bunit'){ const u=view(h.i); if(u) html=unitInfo(u); }
   $('info').innerHTML=html; show('info',!!html); $('info').classList.toggle('battle',G.screen==='battle');
@@ -1399,7 +1362,7 @@ function setHud(o){
 let synSeen='';
 function refreshUI(){
   const P=G.P, s=G.screen, shop=s==='shop', battle=s==='battle', map=s==='map';
-  show('hud',shop||battle); show('syn',shop); show('shopbar',shop); show('lblFront',shop); show('lblShop',shop); show('lblPile',shop); show('hand',shop);
+  show('hud',shop||battle); show('syn',shop); show('shopbar',shop); show('lblFront',shop); show('lblShop',shop); show('hand',shop);
   show('bnames',battle); show('bbar',battle&&$('banner').classList.contains('hide')); show('title',s==='title');
   show('maphead',map); show('maplbls',map); show('crests',map); show('mapcard',map&&!G.map.path); show('btnHome',shop||map);
   if(shop||battle){
@@ -1413,13 +1376,11 @@ function refreshUI(){
       :'<div class="syn-hint">Field 2 or 4 units of the same army to unlock its bonus.</div>';
     if(on.some(k=>!seen.includes(k))&&synSeen!=='-') sfx('buff'); synSeen=on.join();
     $('lblFront').style.left=`calc(var(--u)*${teamX(0)})`; $('lblFront').style.top=`calc(var(--u)*${TEAM_Y+11})`;
-    $('lblShop').textContent=G.res.open?`RESERVE ${P.reserve.length}/${RESERVE_MAX} · ${COST} GOLD TO PLAY A CARD`:`TIER ${tierOf(P)} RECRUITS`; $('lblShop').classList.toggle('res',G.res.open);
-    $('lblPile').textContent=G.res.open?'◂ BACK':P.reserve.length?'':'RESERVE';
+    $('lblShop').textContent=`TIER ${tierOf(P)} RECRUITS`;
     $('btnRoll').disabled=P.gold<1; $('btnEnd').classList.toggle('pulse',P.gold<1&&P.team.some(Boolean));
     const e=entityAt(G.sel); let ctx='';
     if(e&&G.sel.type==='team') ctx=`<button class="btn red" id="btnSell">Sell +${lvlOf(e)}</button>`;
-    else if(e&&G.sel.type==='res') ctx=`<button class="btn red" id="btnDiscard">Discard</button>`;
-    else if(e) ctx=`<button class="btn ice" id="btnRes">Reserve <img src="${icURL('coin')}" alt="">${RESERVE_COST}</button>`;
+    else if(e) ctx=`<button class="btn ice" id="btnFreeze">${e.frozen?'Unfreeze':'Freeze'}</button>`;
     $('ctx').innerHTML=ctx;
     const d=G.drag&&G.drag.moved&&G.drag.src.type==='team'?entityAt(G.drag.src):null;
     show('sellzone',!!d); if(d) $('sellzone').textContent=`SELL +${lvlOf(d)} GOLD`;
@@ -1449,68 +1410,49 @@ function flushFx(){
 }
 function deny(msg,src){ floater(W/2,108,msg,'err'); sfx('error'); shake(1,140); anim(idOf(entityAt(src)),'shake'); }
 function save(){ try{ if(G.mode==='story') localStorage.setItem(STORY_KEY,JSON.stringify({S:G.S,P:G.runOver?null:G.P,UID})); else localStorage.setItem(SAVE_KEY,JSON.stringify({P:G.P,UID})); }catch(e){} }
-function loadSave(key){ try{ const s=JSON.parse(localStorage.getItem(key||SAVE_KEY)); if(!s) return null; if(s.P){ if(!Array.isArray(s.P.team)) return null; s.P.goal=s.P.goal||WINS; s.P.fx=[]; s.P.reserve=s.P.reserve||[]; } return s.P||s.S?s:null; }catch(e){ return null; } }
+function loadSave(key){ try{ const s=JSON.parse(localStorage.getItem(key||SAVE_KEY)); if(!s) return null; if(s.P){ if(!Array.isArray(s.P.team)) return null; s.P.goal=s.P.goal||WINS; s.P.fx=[]; } return s.P||s.S?s:null; }catch(e){ return null; } }
 function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
 
-// Every shop action. A card played from the reserve (`res`) behaves like the unit or item it is.
 function act(src,dst){
   const P=G.P; let ok=false; if(G.busy||G.trans) return;
-  const L=src.type==='res'?P.reserve:src.type==='shop'?P.shop:P.items, card=src.type!=='team'&&L[src.i];
-  if(dst.type==='sell'){ const x=teamX(src.i); if(src.type==='team'&&sellUnit(P,src.i,G.rng)){ ok=true; sfx('sell'); dust(x,TEAM_Y,6); burst(x,TEAM_Y-9,['#e8c170','#de9e41'],8); coins(x,TEAM_Y-10,P.fx.reduce((n,f)=>n+(f.k==='gold'?f.n:0),0)); floater(x,TEAM_Y-22,'SOLD','gold'); } }
-  else if(dst.type==='discard'){ const x=resX(src.i); if(src.type==='res'&&discardReserve(P,src.i)){ ok=true; sfx('card'); sfx('faint'); dust(x,HAND_Y+18,6,'#e7d5b3'); floater(x,HAND_Y-30,'DISCARDED','err'); if(!G.demo&&!CALM) GHOST.push({e:card,x,t0:G.time}); } }
-  else if(dst.type==='pile'){
-    // dst.x,y is where the card was let go; a card sent by button or key leaves from its place in the hand
-    const x0=dst.x==null?(src.type==='shop'?shopX(src.i):itemX(src.i)):dst.x, y0=dst.y==null?HAND_Y:dst.y;
-    if(!card||src.type==='res') return;
-    if(P.gold<RESERVE_COST) deny('Not enough gold',src);
-    else if(P.reserve.length>=RESERVE_MAX) deny('The reserve is full',src);
-    else if(reserveCard(P,L,src.i)){ ok=true; floater(24,22,'-'+RESERVE_COST,'spend'); sfx('stow'); if(G.demo||CALM) stowLand(); else FLY.push({e:card,x0,y0,t0:G.time,ms:340}); }
-  }
-  else if(card&&card.u){
-    const merge=canMerge(P.team[dst.i],card.u); let res;
+  // a frozen card that is played leaves its ice behind in the hand
+  const card=src.type==='shop'?P.shop[src.i]:src.type==='item'?P.items[src.i]:null, ice=card&&card.frozen&&{x:src.type==='shop'?shopX(src.i):itemX(src.i),y:HAND_Y};
+  if(dst.type==='sell'){ const x=teamX(src.i), u=P.team[src.i]; if(src.type==='team'&&sellUnit(P,src.i,G.rng)){ ok=true; sfx('sell'); ring(x,TEAM_Y-9,'#e8c170',14,260); shake(.6,80); if(!G.demo&&!CALM) GONE.push({key:u.key,x,t0:G.time}); dust(x,TEAM_Y,6); burst(x,TEAM_Y-9,['#e8c170','#de9e41'],8); coins(x,TEAM_Y-10,P.fx.reduce((n,f)=>n+(f.k==='gold'?f.n:0),0)); floater(x,TEAM_Y-22,'SOLD','gold'); } }
+  else if(src.type==='shop'){
+    const merge=canMerge(P.team[dst.i],P.shop[src.i].u); let res;
     if(P.gold<COST) deny('Not enough gold',src);
-    else if(!(res=buyUnit(P,src.i,dst.i,G.rng,L))) deny('Your army is full',src);
+    else if(!(res=buyUnit(P,src.i,dst.i,G.rng))) deny('Your army is full',src);
     else{ ok=true; const i=slotOf(res.uid), x=teamX(i); floater(24,22,'-'+COST,'spend');
       if(merge){ sfx('merge'); anim(res.uid,'pop'); ring(x,TEAM_Y-9,'#e8c170',15,320); burst(x,TEAM_Y-10,['#e8c170','#ebede9'],10,.08); floater(x,TEAM_Y-24,'+1/+1','buff'); }
       else{ sfx('buy'); anim(res.uid,'land'); dust(x,TEAM_Y,5); sparkle(x,TEAM_Y-8,FACTIONS[UNITS[res.key].faction].color,5); } }
   }
   else if(src.type==='team'){ const merge=canMerge(P.team[dst.i],P.team[src.i]);
     if(moveUnit(P,src.i,dst.i,G.rng)){ ok=true; sfx(merge?'merge':'land'); for(const i of [src.i,dst.i]){ const u=P.team[i]; if(u){ anim(u.uid,merge?'pop':'land'); dust(teamX(i),TEAM_Y,3); } } if(merge){ ring(teamX(dst.i),TEAM_Y-9,'#e8c170',15,320); burst(teamX(dst.i),TEAM_Y-10,['#e8c170','#ebede9'],10,.08); } } }
-  else if(card){
-    const key=card.item;
+  else if(src.type==='item'){
+    const key=P.items[src.i].item;
     if(P.gold<COST) deny('Not enough gold',src);
-    else if(!useItem(P,src.i,dst.i,G.rng,L)) deny(ITEMS[key].noTarget?'No units to feed':'Needs a valid unit',src);
+    else if(!useItem(P,src.i,dst.i,G.rng)) deny(ITEMS[key].noTarget?'No units to feed':'Needs a valid unit',src);
     else{ ok=true; sfx('buy'); floater(24,22,'-'+COST,'spend'); }
   }
-  if(G.res.open&&!P.reserve.length) G.res.open=false;
+  if(ok&&ice) shatter(ice.x,ice.y);
   G.sel=null; flushFx(); if(ok) save(); refreshUI();
 }
-// Open or close the reserve. With nothing in it there is nothing to look through, so it explains itself instead.
-function togglePile(){
-  const P=G.P, R=G.res; if(G.screen!=='shop'||G.busy||G.trans) return;
-  if(!R.open&&!P.reserve.length){ floater(70,HAND_Y-34,`Drag a card here: ${RESERVE_COST} gold`,'gold'); sfx('click'); anim('pile','shake'); return; }
-  R.open=!R.open; G.sel=G.hover=null; sfx(R.open?'fan':'card'); refreshUI();
-}
 function pickEntity(x,y){
-  const P=G.P; let best=null, bd=18;
+  const P=G.P;
   for(let i=0;i<5;i++) if(Math.abs(x-teamX(i))<=14&&y>=TEAM_Y-28&&y<=TEAM_Y+12) return {type:'team',i};
   if(y<HAND_Y-27||y>HAND_Y+23) return null;
-  if(Math.abs(x-PILE_X)<=19) return {type:'pile',i:0};
-  const near=(type,i,cx)=>{ const d=Math.abs(x-cx); if(d<bd){ bd=d; best={type,i}; } };
-  if(G.res.open) P.reserve.forEach((e,i)=>near('res',i,resX(i)));
-  else{ P.shop.forEach((e,j)=>near('shop',j,shopX(j))); P.items.forEach((e,k)=>near('item',k,itemX(k))); }
-  return best;
+  for(let j=0;j<P.shop.length;j++) if(Math.abs(x-shopX(j))<=17) return {type:'shop',i:j};
+  for(let k=0;k<P.items.length;k++) if(Math.abs(x-itemX(k))<=17) return {type:'item',i:k};
+  return null;
 }
 const pickNode=(x,y)=>Object.keys(REGIONS).find(id=>Math.abs(x-REGIONS[id].x)<=13&&y>=REGIONS[id].y-24&&y<=REGIONS[id].y+12)||null;
 const toV=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}};
 cv.addEventListener('pointerdown',e=>{
-  if(G.busy||G.trans) return; const p=toV(e);
+  if(G.busy||G.trans||e.button===2) return; const p=toV(e);
   if(G.screen==='map'){ if(!G.map.path){ const id=pickNode(p.x,p.y); if(id!==G.map.sel){ G.map.sel=id; if(id){ sfx('click'); ring(REGIONS[id].x,REGIONS[id].y,'#ebede9',14,300); } refreshUI(); } } return; }
   if(G.screen!=='shop') return;
-  let h=pickEntity(p.x,p.y); G.press=p; G.hover=null; G.onPile=!!h&&h.type==='pile';
-  // pressing the closed pile takes hold of its top card: drag it out to play it, or let go to open the pile
-  if(G.onPile) h=!G.res.open&&G.P.reserve.length?{type:'res',i:G.P.reserve.length-1}:null;
-  if(h&&entityAt(h)){ const c=h.type!=='team', cx=h.type==='shop'?shopX(h.i):h.type==='item'?itemX(h.i):G.res.open?resX(h.i):PILE_X; G.drag={src:h,x:p.x,y:p.y,vx:0,moved:false,card:c,ox:c?p.x-cx:0,oy:c?p.y-HAND_Y:0}; try{cv.setPointerCapture(e.pointerId)}catch(_){} }
+  const h=pickEntity(p.x,p.y); G.press=p; G.hover=null;
+  if(h&&entityAt(h)){ const c=h.type!=='team'; G.drag={src:h,x:p.x,y:p.y,vx:0,moved:false,card:c,ox:c?p.x-(h.type==='shop'?shopX(h.i):itemX(h.i)):0,oy:c?p.y-HAND_Y:0}; try{cv.setPointerCapture(e.pointerId)}catch(_){} }
 });
 cv.addEventListener('pointermove',e=>{
   const p=toV(e);
@@ -1518,52 +1460,69 @@ cv.addEventListener('pointermove',e=>{
     if(G.drag){ const d=G.drag, c=d.src.type!=='team'&&p.y>HAND_Y-28; d.vx=d.vx*.7+(p.x-d.x)*.3; d.x=p.x; d.y=p.y;
       if(c!==d.card){ d.card=c; if(d.moved){ sfx('card'); if(!c) sparkle(p.x,p.y,'#e7d5b3',5); } }
       if(!G.drag.moved&&Math.hypot(p.x-G.press.x,p.y-G.press.y)>3){ G.drag.moved=true; G.sel=null; sfx('click'); refreshUI(); } }
-    else if(e.pointerType==='mouse'){ const h=pickEntity(p.x,p.y), hv=h&&(entityAt(h)||h.type==='pile')?h:null; if(!same(hv,G.hover)&&(hv||G.hover&&G.hover.type!=='faction')){ G.hover=hv; refreshInfo(); } }
+    else if(e.pointerType==='mouse'){ const h=pickEntity(p.x,p.y), hv=h&&entityAt(h)?h:null; if(!same(hv,G.hover)&&(hv||G.hover&&G.hover.type!=='faction')){ G.hover=hv; refreshInfo(); } }
   } else if(G.screen==='battle'){
     let hv=null; for(const L of BV.views) for(const u of L) if(Math.abs(p.x-u.x)<=11&&p.y>=FIELD_Y-22&&p.y<=FIELD_Y+12) hv={type:'bunit',i:u.id};
     if(!same(hv,G.hover)){ G.hover=hv; refreshInfo(); }
   } else if(G.screen==='map') cv.style.cursor=pickNode(p.x,p.y)?'pointer':'';
 });
 cv.addEventListener('pointerup',e=>{
-  if(G.screen!=='shop'||G.busy||G.trans){ G.drag=null; return; }
-  const p=toV(e), d=G.drag, h=pickEntity(p.x,p.y), onPile=G.onPile; G.drag=null; G.onPile=false;
+  if(G.screen!=='shop'||G.busy||G.trans||e.button===2){ G.drag=null; return; }
+  const p=toV(e), d=G.drag, h=pickEntity(p.x,p.y); G.drag=null;
   if(d&&d.moved){
     if(d.src.type==='team'&&p.y>HAND_Y-26) act(d.src,{type:'sell'});
     else if(h&&h.type==='team') act(d.src,h);
-    else if(h&&h.type==='pile'&&d.src.type!=='res') act(d.src,{type:'pile',x:p.x-d.ox,y:p.y-d.oy});
     else{ anim(idOf(entityAt(d.src)),d.src.type==='team'?'land':'pop'); refreshUI(); }
     return;
   }
-  if(onPile){ if(h&&h.type==='pile'){ if(G.sel&&(G.sel.type==='shop'||G.sel.type==='item')) act(G.sel,{type:'pile'}); else togglePile(); } return; }
   if(G.sel&&G.sel.type!=='faction'&&h&&h.type==='team'&&!same(G.sel,h)) return act(G.sel,h);
   if(h&&entityAt(h)){ G.sel=same(G.sel,h)?null:h; sfx('click'); anim(idOf(entityAt(h)),'hop'); } else G.sel=null;
   refreshUI();
 });
-cv.addEventListener('pointercancel',()=>{ G.drag=null; G.onPile=false; if(G.screen==='shop') refreshUI(); });
+cv.addEventListener('contextmenu',e=>{ if(G.screen!=='shop') return; e.preventDefault(); const p=toV(e), h=pickEntity(p.x,p.y); if(h&&h.type!=='team') doFreeze(h); });
+cv.addEventListener('pointercancel',()=>{ G.drag=null; if(G.screen==='shop') refreshUI(); });
 cv.addEventListener('pointerleave',()=>{ if(G.hover&&G.hover.type!=='faction'){ G.hover=null; refreshInfo(); } });
 
 $('syn').addEventListener('pointerover',e=>{ const r=e.target.closest('.syn-row'); if(r){ G.hover={type:'faction',i:r.dataset.f}; refreshInfo(); } });
 $('syn').addEventListener('pointerout',()=>{ if(G.hover&&G.hover.type==='faction'){ G.hover=null; refreshInfo(); } });
 $('syn').addEventListener('click',e=>{ const r=e.target.closest('.syn-row'); if(r){ const h={type:'faction',i:r.dataset.f}; G.sel=same(G.sel,h)?null:h; refreshUI(); } });
-function dropIn(delay){ let n=0; [...G.P.shop,...G.P.items].forEach(s=>anim(idOf(s),'deal',(delay||0)+n++*60)); }
+// deal the new cards into the hand; the ones kept on ice only catch the light
+function dropIn(delay){ let n=0; [...G.P.shop,...G.P.items].forEach(s=>{ if(s.frozen) glint(idOf(s),(delay||0)+200); else anim(idOf(s),'deal',(delay||0)+n++*60); }); }
 function doRoll(){
   if(G.screen!=='shop'||G.busy||G.trans) return; const P=G.P;
-  const old=[...P.shop,...P.items].map((e,n)=>({e,x:handX(n)}));
+  const old=[...P.shop,...P.items].map((e,n)=>({e,x:handX(n)})); let n=0, kept=0;
   if(!rollShop(P,G.rng)) return deny('Not enough gold');
-  if(!G.demo&&!CALM&&!G.res.open) old.forEach((o,n)=>GHOST.push({e:o.e,x:o.x,t0:G.time+n*25}));
-  G.res.open=false; sfx('roll'); floater(24,22,'-1','spend'); dropIn(140);
+  // the frozen cards hold their ground, the rest are flicked away one after another
+  for(const o of old){
+    if(o.e.frozen){ kept++; anim(idOf(o.e),'snap'); sparkle(o.x,HAND_Y-18,['#ebede9','#a4dddb'],3); }
+    else if(!G.demo&&!CALM){ GHOST.push({e:o.e,x:o.x,t0:G.time+n*35,dir:(n%2?1:-1)*rnd(.6,1.2)}); n++; }
+  }
+  sfx('roll'); if(kept) sfx('clink'); shake(.6,90); floater(24,22,'-1','spend'); dropIn(140+n*35);
   if(G.sel&&G.sel.type!=='team') G.sel=null; G.hover=null; save(); refreshUI();
 }
-function doReserve(){ const h=G.sel; if(h&&(h.type==='shop'||h.type==='item')&&entityAt(h)) act(h,{type:'pile'}); }
-function doSell(){ const h=G.sel; if(!h||!entityAt(h)) return; if(h.type==='team') act(h,{type:'sell'}); else if(h.type==='res') act(h,{type:'discard'}); }
+// Freeze or thaw a card of the hand (the selected one, or else the one under the pointer). Frost creeps over
+// the card while it shivers, then sets (see iceOf); thawing breaks the ice off at once.
+function doFreeze(h){
+  const card=x=>x&&(x.type==='shop'||x.type==='item')&&entityAt(x)?x:null; h=card(h)||card(G.sel)||card(G.hover);
+  if(!h||G.screen!=='shop'||G.busy||G.trans) return;
+  const e=entityAt(h), id=idOf(e), x=h.type==='shop'?shopX(h.i):itemX(h.i), y=HAND_Y; e.frozen=!e.frozen;
+  if(e.frozen){
+    sfx('freeze'); floater(x,y-34,'FROZEN','ice');
+    // the cold gathers on the card from all around
+    for(let i=0;i<18;i++){ const a=i/18*6.283+rnd(-.2,.2), r=rnd(30,46), life=rnd(200,260); part({x:x+Math.cos(a)*r,y:y+Math.sin(a)*r*1.2,vx:-Math.cos(a)*r/life,vy:-Math.sin(a)*r*1.2/life,life,col:i%3?'#a4dddb':'#ebede9',size:i%3?1:2}); }
+    if(G.demo||CALM) frosted(x,y,id); else{ ICE.set(id,G.time); anim(id,'chill'); }
+  } else { ICE.delete(id); GLINT.delete(id); shatter(x,y); anim(id,'shake'); shake(.8,100); }
+  save(); refreshUI();
+}
+function doSell(){ if(G.sel&&G.sel.type==='team'&&entityAt(G.sel)) act(G.sel,{type:'sell'}); }
 $('btnRoll').onclick=doRoll;
-$('ctx').addEventListener('click',e=>{ if(e.target.id==='btnSell') doSell(); else if(e.target.closest('#btnRes')) doReserve(); else if(e.target.id==='btnDiscard') doSell(); });
+$('ctx').addEventListener('click',e=>{ if(e.target.id==='btnSell') doSell(); else if(e.target.id==='btnFreeze') doFreeze(G.sel); });
 $('btnEnd').onclick=()=>endTurnFlow();
-addEventListener('keydown',e=>{ if(G.screen!=='shop'||G.coll||e.metaKey||e.ctrlKey||!$('modal').classList.contains('hide')) return; const k=e.key.toLowerCase(); if(k==='r') doRoll(); else if(k==='e') doReserve(); else if(k==='q'||(k==='escape'&&G.res.open)) togglePile(); else if(k==='s') doSell(); });
+addEventListener('keydown',e=>{ if(G.screen!=='shop'||G.coll||e.metaKey||e.ctrlKey||!$('modal').classList.contains('hide')) return; const k=e.key.toLowerCase(); if(k==='r') doRoll(); else if(k==='f') doFreeze(); else if(k==='s') doSell(); });
 
 // ---------- flow ----------
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-function clearStage(){ G.sel=G.hover=G.drag=null; G.busy=false; T.token++; show('banner',false); show('splash',false); $('fl').innerHTML=''; PT.length=0; FX.length=0; AN.clear(); GHOST.length=0; FLY.length=0; CX.clear(); G.res.open=false; G.res.o=0; G.onPile=false; cv.classList.remove('grey'); cv.style.cursor=''; for(const k in HUDV) delete HUDV[k]; }
+function clearStage(){ G.sel=G.hover=G.drag=null; G.busy=false; T.token++; show('banner',false); show('splash',false); $('fl').innerHTML=''; PT.length=0; FX.length=0; AN.clear(); GHOST.length=0; GONE.length=0; ICE.clear(); GLINT.clear(); CX.clear(); cv.classList.remove('grey'); cv.style.cursor=''; for(const k in HUDV) delete HUDV[k]; }
 function enterShop(){
   clearStage(); G.screen='shop'; synSeen='-'; const P=G.P;
   refreshUI(); flushFx(); dropIn(); P.team.forEach((u,i)=>{ if(u) anim(u.uid,'hop',i*60); });
@@ -1575,7 +1534,7 @@ function newSkirmish(){ G.mode='skirmish'; UID=1; startRun(newPlayer()); }
 async function endTurnFlow(){
   const P=G.P; if(G.busy||G.trans||G.screen!=='shop') return;
   if(!P.team.some(Boolean)) return deny('Recruit at least one unit first');
-  G.busy=true; G.sel=G.hover=G.drag=null; G.res.open=false;
+  G.busy=true; G.sel=G.hover=G.drag=null;
   endTurn(P,G.rng); const had=P.fx.length; flushFx(); refreshUI(); sfx('end'); P.team.forEach((u,i)=>{ if(u&&!AN.has(u.uid)) anim(u.uid,'hop',i*70); });
   await sleep(had?900:420);
   const story=G.mode==='story', opp=makeOpponent(P.turn,G.rng,story?storyFoe(P):null), sim=simulateBattle(P.team,opp.team,(G.rng()*2147483647)|0);
@@ -1701,12 +1660,12 @@ function help(){
   modal(`<h2>How to Play</h2><ul>
 <li><b>Recruit.</b> You get 10 gold a turn. Drag a card from your hand onto your line: units and supplies cost ${COST}, and a fresh hand costs 1.</li>
 <li><b>Arrange.</b> Drag units to reorder them. The <b>front</b> of your line is on the right and fights first.</li>
-<li><b>Merge.</b> Drop a unit on its twin to combine them. Three copies make level 2, six make level 3, and abilities grow with each level. A gold arrow on a card means it would merge with a unit you field; a blue mark means its twin is waiting in your reserve.</li>
+<li><b>Merge.</b> Drop a unit on its twin to combine them. Three copies make level 2, six make level 3, and abilities grow with each level. A gold arrow on a card means it would merge with a unit you field.</li>
 <li><b>Armies.</b> Field 2 or 4 units from the same army to switch on its bonus. Mercenaries count toward every army you already field 2 of.</li>
 <li><b>Story.</b> Start with the Medieval army and march across the map. Win a land's battles and beat its champion to add its army to your recruits.</li>
 <li><b>Skirmish.</b> Every army from the start. Win ${WINS} battles before you lose ${LIVES} lives.</li>
-<li><b>Reserve.</b> Drag a card onto the pile left of your hand to set it aside for ${RESERVE_COST} gold. It waits there through rolls and turns, up to ${RESERVE_MAX} cards, and costs the usual ${COST} to play. Click the pile to look through it; select a card there to discard it (no gold back).</li>
-<li><b>Tips.</b> Drag a unit down onto your hand to sell it. Keys: R roll, E reserve, Q open the reserve, S sell or discard.</li></ul>
+<li><b>Freeze.</b> A frozen card stays in your hand through rolls and into the next turn, for free. Select a card and press Freeze, right-click it, or point at it and press F. Do the same again to thaw it.</li>
+<li><b>Tips.</b> Drag a unit down onto your hand to sell it. Keys: R roll, F freeze, S sell.</li></ul>
 <button class="btn gold" id="btnOk">Got it</button>`);
   $('btnOk').onclick=closeModal; $('btnOk').focus({preventScroll:true});
 }

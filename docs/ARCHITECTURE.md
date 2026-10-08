@@ -29,18 +29,17 @@ Everything lives in `index.html`: a `<style>` block, the DOM overlay markup, and
 | `def(...)` / `UNITS` | Unit table. One `def` call per unit |
 | `ITEMS` | Supplies and gear |
 | `synergies(units)` | `{army: {n, w, lvl}}`; each mercenary adds 1 to every army that already has 2 real members (`w` = wilds counted) |
-| `newPlayer(opts)`, `tierOf`, `startTurn`, `refill`, `rollShop`, `reserveCard`, `discardReserve`, `buyUnit`, `sellUnit`, `moveUnit`, `mergeInto`, `levelUp`, `useItem`, `endTurn` | Shop-phase actions on a player state `P` |
+| `newPlayer(opts)`, `tierOf`, `startTurn`, `refill`, `rollShop`, `buyUnit`, `sellUnit`, `moveUnit`, `mergeInto`, `levelUp`, `useItem`, `endTurn` | Shop-phase actions on a player state `P` |
 | `simulateBattle(teamA, teamB, seed)` | Deterministic battle; returns `{ev, result, rounds}` |
-| `botShop`, `botReserve`, `arrange`, `makeOpponent(turn, rng, foe)` | Greedy bot that drafts through the same shop and uses the reserve with its leftover gold; `foe` restricts and tunes it (`noRes` switches the reserve off) |
+| `botShop`, `arrange`, `makeOpponent(turn, rng, foe)` | Greedy bot that drafts through the same shop; `foe` restricts and tunes it |
 | `REGIONS`, `ROUTES`, `storyRun`, `storyFoe`, `storyOpen`, `storyPath` | Story mode data and helpers |
 
-Player state `P`: `{gold, turn, lives, goal, wins, team[5], shop[], items[], reserve[], fx[]}` plus the run
+Player state `P`: `{gold, turn, lives, goal, wins, team[5], shop[], items[], fx[]}` plus the run
 options `pool` (unit keys on offer, `null` = all), `fast` (a new tier every turn instead of every
 two), `bonus` (extra gold on turn 1), `cap` (army size, used by rival bots) and `story` (region id).
 `team[0]` is the **front**. Unit instance: `{uid, key, atk, hp, xp, gear}`; level comes from
-`lvlOf(u)` (xp 0–1 → 1, 2–4 → 2, 5 → 3). Shop entries are `{u, bonus?}` and
-`{item, id}`; `reserve[]` holds the same entries, moved there by `reserveCard`, and `buyUnit` /
-`useItem` take the list a card is played from as their last argument. Shop actions push `{k:'buff'|'gold'|'level'|'text', …}` records onto `P.fx`; the
+`lvlOf(u)` (xp 0–1 → 1, 2–4 → 2, 5 → 3). Shop entries are `{u, frozen, bonus?}` and
+`{item, frozen}`. Shop actions push `{k:'buff'|'gold'|'level'|'text', …}` records onto `P.fx`; the
 view drains them with `flushFx()` to show floating text.
 
 ### View (everything after the LOGIC region)
@@ -70,10 +69,9 @@ stand, `HAND_Y` is the middle of a card.
 
 ### The hand
 
-The shop offers its recruits and supplies as cards (`CARD_W`×`CARD_H`, 34×46) in one row: the
-reserve pile at `PILE_X`, then recruits, a gap and supplies, centred in the space to its right
-(`rowX`; the pitch tightens when eight cards have to fit). `handX(n)` is the centre of the n-th
-card and moves as the row shrinks; `renderShop` eases each card toward it (`CX`, keyed by uid / item id). Units already in
+The shop offers its recruits and supplies as cards (`CARD_W`×`CARD_H`, 34×46) in one centred row:
+recruits, a gap, then supplies. `handX(n)` is the centre of the n-th card and moves as the row
+shrinks; `renderShop` eases each card toward it (`CX`, keyed by uid / item id). Units already in
 the army are not cards: they stand on slabs exactly as they do in battle.
 
 - `drawCard(o)` paints the face flat on a scratch canvas (`CARDC`) and blits it with the card's
@@ -86,18 +84,18 @@ the army are not cards: they stand on slabs exactly as they do in battle.
   and re-places it every frame with the same offset, tilt, scale and alpha as the canvas card.
 - A dragged card stays a card while the pointer is over the hand (`drag.card`) and turns into the
   bare unit sprite or item icon once it is carried onto the field. `GHOST` holds the cards a roll
-  throws away while they fall off screen.
-- **The reserve pile.** `G.res = {open, o}`: `o` eases between 0 (hand showing, reserve stacked on
-  the pile with a count badge) and 1 (hand ducked below the screen, reserve dealt out along the
-  row at `resX(i)`). `togglePile()` flips it. Input entities are `{type:'pile'}` and
-  `{type:'res', i}`; pressing the closed pile takes hold of its top card, so a drag plays it and a
-  plain click opens the pile. Dropping a hand card on the pile calls `act(src, {type:'pile'})`,
-  which puts it in `FLY` for its flight and ends in `stowLand()`.
-- **Hints.** `drawCard` takes `twin`: `'army'` draws a gold arrow tag (the card would merge with a
-  unit in the army), `'res'` a blue stack tag (its twin is in the reserve). `renderShop` works these
-  out each frame, glows the pile (or the matching cards when it is open) while the shop offers the
-  twin of a reserved unit, and bobs a coin over the pile when gold is at least `RESERVE_COST` but
-  below `COST`. `refreshInfo` says the same in words.
+  throws away while they are flicked off the row, `GONE` the sold units while they are whisked off
+  their slabs.
+- **Ice.** `doFreeze(h)` toggles `frozen` on a card of the hand (the Freeze button, F on the
+  selected or hovered card, or a right-click). `ICE` maps a card id to the moment it was frozen
+  while its frost creeps in: `drawCard` asks `iceOf(id, o)` how far it has got, lights the `FROST`
+  rim pixels whose threshold has passed, grows the icicles, and when the frost sets `iceOf` fires
+  `frosted()` once (ring, crystals, shine). A frozen card with no `ICE` entry is drawn fully iced,
+  which is what a loaded save and demo mode get. `GLINT` / `glint(id, delay)` is a one-off shine;
+  `glintOf` adds a periodic one. `shatter(x, y)` is the ice breaking off, used by a thaw and by
+  playing a frozen card. On a roll the frozen cards `snap` and clink, and `dropIn` only shines them.
+- `drawCard` takes `merge` to put a gold arrow tag on a card whose twin stands in the army;
+  `refreshInfo` says the same in words.
 
 ## Juice layer
 
@@ -110,7 +108,8 @@ while a battle is being skipped (`skipping()`) and respect `prefers-reduced-moti
 - **Shapes** (`FX`): `ring`, `spark`, `beam`, `flash`, shooting `star`. Timed on `G.time`.
 - **Camera**: `shake(magnitude, ms)` moves the whole `#stage`; `flash(colour, ms)` tints the screen.
 - **Slot and card animations**: `anim(id, kind, delay)` with kinds `deal` (a card sliding up into
-  the hand), `pop`, `land`, `hop`, `shake`, keyed by unit `uid` or item `id`. `renderShop` reads
+  the hand), `pop`, `land`, `hop`, `shake`, `chill` (a one-pixel shiver), `snap` (a small stiff
+  pulse), keyed by unit `uid` or item `id`. `renderShop` reads
   them through `animOf(id)`, which returns an offset, a squash, an alpha and a tilt.
 - **Screen changes**: `go(fn)` runs a block wipe on `#fxc` and calls `fn` while the screen is
   covered. Input is ignored while `G.trans` is set. `clearStage()` resets per-screen state.
@@ -243,8 +242,6 @@ simulator for battle effects).
 
 - `tools/sim.py` runs bot-vs-bot battles and reports crashes, draw rate, win rate by army, bot
   strength by turn, and any ability that never fired.
-- `tools/sim.py tools/reserve.js` pits bots that reserve against bots that never do and counts how
-  the pile gets used.
 - `tools/sim.py tools/story.js` has a bot play every region's expedition and reports how often it
   conquers the region and how often it beats the champion.
 - `tools/shot.sh` takes headless Chrome screenshots. `#demo=` hashes jump straight to a screen

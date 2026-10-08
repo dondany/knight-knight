@@ -53,24 +53,8 @@ army. Conquering all six ends the story.
 | 9–10 | 5 | 1–5 | 5 | 2 |
 | 11+ | 6+ | 1–6 | 5 | 2 |
 
-Recruits and items are drawn uniformly from everything unlocked. A roll or a new turn replaces the
-whole shop.
-
-**The reserve.** For 1 gold a card (recruit or item) can be set aside on the reserve pile, which
-holds up to 4. Reserved cards survive rolls and turn changes, and still cost the usual 3 gold when
-played, so a card that waits a turn costs 4 in all. A reserved card can be discarded to free its
-place, but the gold is not returned and it cannot go back to the shop. The reserve replaced
-freezing, which was free but kept the card in a shop slot. The numbers are `RESERVE_COST` and
-`RESERVE_MAX`.
-
-The shop points out twins: a gold arrow on a card means buying it merges with a unit in the army,
-a blue mark means its twin is in the reserve, and the pile glows when the shop offers the twin of
-something reserved. With 1 or 2 gold left (enough to reserve, not to buy) a coin bobs over the pile.
-
-Bots use the reserve too. With gold left that cannot buy a card, a bot reserves a twin of a unit
-it fields, the second copy of a unit it has already reserved, a strong unit of its favoured army,
-or useful gear, and otherwise rolls. It plays reserved cards through the same scoring as shop
-cards and discards a reserved unit that has fallen two tiers behind without a twin.
+Recruits and items are drawn uniformly from everything unlocked. Frozen entries survive rerolls
+and turn changes.
 
 ## Merging and levels
 
@@ -243,38 +227,11 @@ a champion win rate of 30–50%. With 400 runs a region can read a few points ou
 
 ```
 region     wins danger | conquest%  boss-battle win%  avg battles | solo conquest%
-norse      3    1      |    91%        35%            5.1        |    91%
-rome       3    1      |    90%        47%            5.3        |    95%
-sparta     4    2      |    87%        39%            5.3        |    99%
-egypt      4    3      |    77%        35%            5.6        |    92%
-steppe     5    3      |    66%        39%            7.0        |    65%
-japan      5    4      |    52%        33%            6.8        |    95%
+norse      3    1      |    88%        34%            5.2        |    87%
+rome       3    1      |    83%        41%            5.4        |    94%
+sparta     4    2      |    75%        29%            5.6        |    98%
+egypt      4    3      |    73%        33%            5.7        |    88%
+steppe     5    3      |    65%        40%            7.0        |    58%
+japan      5    4      |    48%        28%            6.8        |    95%
 ```
-
-These numbers are from after the bots learned to reserve. Before that the same table read 88, 83,
-75, 73, 65 and 48: the reserve helps the player's side more than the capped rivals, so every region
-got easier and **Sparta and Egypt now sit about 7 points above their bands**. The regions have not
-been retuned for it.
-
-### What the reserve is worth
-
-From `tools/sim.py tools/reserve.js`: a bot that reserves against an otherwise identical bot that
-never does, 300 battles a turn.
-
-```
-  turn   wins   draws  losses   stats/unit with  without
-     2    32%    30%     38%              5.5      5.4
-     4    40%    21%     39%              7.2      7.0
-     6    53%     7%     40%              9.0      8.6
-     8    51%     8%     40%             11.2     10.9
-    10    53%     8%     39%             13.3     12.9
-    12    50%    11%     39%             14.8     14.8
-    14    49%    12%     39%             17.0     16.9
-
-overall: 47.0% wins, 13.8% draws, 39.2% losses for the reserve bot
-use: 0.49 cards reserved a turn; 69% of them played later, 7% discarded
-```
-
-A modest edge that appears from turn 6, when leftover gold starts finding twins worth keeping. A
-person who plans merges around the pile should get more out of it than the bot does.
 

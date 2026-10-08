@@ -98,7 +98,7 @@ out(`<!doctype html>
 <li>You get <b>10 gold</b> each turn. Gold you do not spend is lost.</li>
 <li>Every unit and every item costs <b>${COST} gold</b>, whatever its tier. A reroll of the shop costs <b>1</b>.</li>
 <li>Selling a unit returns gold equal to its <b>level</b> (1, 2 or 3).</li>
-<li>For <b>${RESERVE_COST}</b> gold you can set a recruit or item aside on the <b>reserve</b> pile, which holds up to ${RESERVE_MAX} cards. It stays there through rerolls and into later turns, and costs the usual ${COST} when you play it. A reserved card you no longer want can be discarded, with no gold back.</li>
+<li>Freezing a recruit or item keeps it through rerolls and into the next turn. It is free, and you can thaw it again whenever you like.</li>
 <li>Your army has <b>5 slots</b>. The front of the line fights first; in the shop the front is on the right.</li>
 <li>A loss costs 1 life. A draw costs nothing. Either way the turn counter moves on.</li>
 <li>No stat can go above <b>${CAP}</b>.</li>
