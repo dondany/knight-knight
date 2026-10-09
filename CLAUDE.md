@@ -9,8 +9,9 @@ Ships as one static page for GitHub Pages.
 
 - `index.html` – the whole game: CSS, markup and one inline script. No build step, no dependencies.
 - `characters.PNG` – 80×112 sprite sheet, 16×16 cells, 5 per row, 7 rows. Rows 0–5 are the armies
-  (medieval, vikings, spartans, egyptians, romans, japanese); row 6 holds the Gauls, the wild
-  army (key `gaul`; it was called Mercenaries, key `merc`, until the row was finished).
+  (medieval, vikings, spartans, egyptians, romans, japanese); row 6 holds the Gauls (key `gaul`;
+  they were the wild army, first called Mercenaries with key `merc`, until they got their own
+  bonus. The wild rule is still in the code, waiting for an army: see docs/ARCHITECTURE.md).
 - `tools/` – dev helpers (rules sim, screenshots, sprite re-embed). Not needed to run the game.
 - `docs/ARCHITECTURE.md` – code map, battle event log, recipes for adding content, testing, gotchas.
 - `docs/DESIGN.md` – rules, numbers, every unit and item, balance snapshot.

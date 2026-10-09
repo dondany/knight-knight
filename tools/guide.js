@@ -9,7 +9,6 @@ function icon(k) {
   rows.forEach((row, y) => { for (let x = 0; x < row.length;) { let n = 1; while (row[x + n] === row[x]) n++; if (PAL[row[x]]) r += `<rect x="${x}" y="${y}" width="${n}" height="1" fill="${PAL[row[x]]}"/>`; x += n; } });
   return `<svg class="ico" viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
 }
-const ARMIES = [...REAL_F, 'gaul'];
 const WHERE = {medieval: 'in the shop', roman: 'in the shop'};
 const regionOf = f => Object.keys(REGIONS).find(id => REGIONS[id].army === f);
 const pips = n => `<span class="pips" title="Danger ${n} of 4">${[1, 2, 3, 4].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
@@ -21,7 +20,7 @@ function unitCard(k) {
 <p class="stats"><b class="atk">${d.atk} ATK</b><b class="hp">${d.hp} HP</b></p><p><em>${esc(d.ability)}.</em> ${lv(d.text)}</p></div></article>`;
 }
 function armySection(f) {
-  const F = FACTIONS[f], R = REGIONS[regionOf(f)], us = armyUnits(f), wild = f === 'gaul';
+  const F = FACTIONS[f], R = REGIONS[regionOf(f)], us = armyUnits(f), wild = isWild(f);
   const tiers = wild ? `<dt>Wild</dt><dd>${esc(F.tiers[0])}</dd>` : `<dt>2 units</dt><dd>${esc(F.tiers[0])}</dd><dt>4 units</dt><dd>${esc(F.tiers[1])}</dd>`;
   const token = f === 'egypt' ? `<article class="unit token">${spr('medjay')}<div><h4>${MUMMY.name}<span class="tier">Token</span></h4><p>${esc(MUMMY.text)} Raised by Egyptian abilities and by Afterlife. Mummies get no army bonus and never rise a second time.</p></div></article>` : '';
   return `<div class="army" id="${f}" style="--c:${F.color}"><header><h3>${F.name}</h3>
@@ -80,7 +79,7 @@ out(`<!doctype html>
 <h1>KNIGHT KNIGHT</h1>
 <p>A pixel-art auto-battler. Draft an army from across history in the shop, line it up, and watch it fight a rival on its own. This page lists everything in the game as it stands today.</p>
 <a class="play" href="../">Play the game ▸</a>
-<ul class="facts"><li><b>${REAL_F.length}</b>armies + the wild Gauls</li><li><b>${nUnits}</b>units</li><li><b>${ITEM_KEYS.length}</b>items</li><li><b>${nRegions}</b>lands to conquer</li><li><b>2</b>modes</li></ul>
+<ul class="facts"><li><b>${ARMIES.length}</b>armies</li><li><b>${nUnits}</b>units</li><li><b>${ITEM_KEYS.length}</b>items</li><li><b>${nRegions}</b>lands to conquer</li><li><b>2</b>modes</li></ul>
 <div class="parade">${UNIT_KEYS.map(k => `<a href="#u-${k}">${spr(k, 'sm')}</a>`).join('')}</div>
 </div></header>
 <main class="wrap">
@@ -119,7 +118,6 @@ ${turnTable()}
 <section id="armies">
 <h2>Armies</h2>
 <p class="lead">Field <b>2</b> units of the same army to switch on its bonus, and <b>4</b> to improve it. Copies of the same unit count. Stats are shown as base attack and health at level 1.</p>
-<p class="lead">Gauls are wild: ${esc(FACTIONS.gaul.tiers[0].replace(/^Counts/, 'each one counts').replace(/\.$/, ''))}, and gets those armies' bonuses itself. A Gaul cannot switch a bonus on alone.</p>
 ${ARMIES.map(armySection).join('\n')}
 </section>
 
@@ -135,7 +133,7 @@ ${ARMIES.map(armySection).join('\n')}
 <ol class="steps">
 <li><b>Start of battle.</b> Every start-of-battle ability fires once, in order of attack, highest first. Units felled here are removed before the next ability fires.</li>
 <li><b>The clash.</b> The two front units hit each other at the same moment. Gear and first-attack bonuses are added to the hit. Then blocks cancel the hit entirely, or armour reduces it. A hit that lands always deals at least 1.</li>
-<li><b>Reactions.</b> The unit second in line fires its support ability, then the fronts fire their after-attack abilities and knockouts.</li>
+<li><b>Reactions.</b> The unit second in line fires its support ability, then the fronts fire their after-attack abilities, a Gaul's Furor and knockouts.</li>
 <li><b>Deaths.</b> For each fallen unit, in order: its faint ability, an Ankh revival, Egyptian Afterlife, Viking Blood Rage, then the reactions of the friends still standing.</li>
 <li><b>Repeat</b> until one side is empty. If both sides are empty at once, it is a draw.</li>
 </ol>
@@ -166,14 +164,14 @@ ${mapSvg()}
 <li>Conquering all ${nRegions} lands ends the story.</li>
 </ul>
 ${regionTable()}
-<p class="note">"Rival gold" is what the rival bot gets to spend each turn against your 10. Alesia's rivals draft from every army, favouring Gauls.</p>
+<p class="note">"Rival gold" is what the rival bot gets to spend each turn against your 10.</p>
 </section>
 
 <section id="rivals">
 <h2>Rivals</h2>
 <p class="lead">There is no multiplayer. Each rival is built on the spot by a bot that plays the same shop as you for the same number of turns.</p>
 <ul>
-<li>It favours one army (and Gauls), fills empty slots first, merges copies, and swaps out its weakest unit when a clearly better one shows up.</li>
+<li>It favours one army, fills empty slots first, merges copies, and swaps out its weakest unit when a clearly better one shows up.</li>
 <li>It buys gear for units without any, and War Manuals and Feasts once it has 3 units, then rerolls with what is left.</li>
 <li>In Skirmish each rival wastes 0–2 gold a turn, so some are stronger than others.</li>
 <li>It lines up bruisers in front and support units behind.</li>

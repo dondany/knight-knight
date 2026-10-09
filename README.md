@@ -17,8 +17,7 @@ The whole game is one static page: `index.html` plus the sprite sheet. No build 
 - **Arrange.** Drag units to reorder them. The front of your line is on the right and fights first.
 - **Merge.** Drop a unit on its twin. Three copies make level 2, six make level 3, and abilities
   grow with each level.
-- **Armies.** Field 2 or 4 units from the same army to switch on its bonus. Gauls count toward
-  every army you already field 2 of.
+- **Armies.** Field 2 or 4 units from the same army to switch on its bonus.
 - **Fight.** End the turn and your army battles a rival on its own.
 - **Tips.** Freeze a recruit to keep it for next turn. Drag a unit down to the shop to sell it.
   Keys: `R` roll, `F` freeze, `S` sell. Hover a unit (or tap it) to read its ability.

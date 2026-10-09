@@ -25,10 +25,10 @@ Everything lives in `index.html`: a `<style>` block, the DOM overlay markup, and
 |---|---|
 | `CAP, COST, LIVES, WINS` | Stat cap 50, price 3; skirmish defaults of 5 lives and 10 wins |
 | `makeRng(seed)` | Seeded RNG with `.int`, `.pick`, `.shuffle` |
-| `FACTIONS`, `REAL_F` | Army names, colours, bonus text. `gaul` is the wild army, kept out of `REAL_F` |
+| `FACTIONS`, `ARMIES`, `REAL_F` | Army names, colours, bonus text. `ARMIES` is every army key; `REAL_F` leaves out armies flagged `wild:true` (none today) |
 | `def(...)` / `UNITS` | Unit table. One `def` call per unit |
 | `ITEMS` | Supplies and gear |
-| `synergies(units)` | `{army: {n, w, lvl}}`; each Gaul adds 1 to every army that already has 2 real members (`w` = wilds counted) |
+| `synergies(units)`, `isWild(army)` | `{army: {n, w, lvl}}`; a unit of a wild army adds 1 to every army that already has 2 real members (`w` = wilds counted) |
 | `newPlayer(opts)`, `tierOf`, `startTurn`, `refill`, `rollShop`, `buyUnit`, `sellUnit`, `moveUnit`, `mergeInto`, `levelUp`, `useItem`, `endTurn` | Shop-phase actions on a player state `P` |
 | `simulateBattle(teamA, teamB, seed)` | Deterministic battle; returns `{ev, result, rounds}` |
 | `botShop`, `arrange`, `makeOpponent(turn, rng, foe)` | Greedy bot that drafts through the same shop; `foe` restricts and tunes it |
@@ -145,7 +145,8 @@ embedded copy current.
 1. Emit `init`. Fire `start` abilities, highest attack first, resolving deaths after each.
 2. Loop while both sides have units: `beforeAttack` for both fronts → `attack` → damage exchange
    (a unit with `iaido` strikes first and takes nothing back if it kills) → `friendAheadAttacks`
-   for the second in line → `afterAttack` → `knockout` → resolve deaths.
+   for the second in line → `afterAttack` → Gallic Furor for a front unit that is still standing
+   → `knockout` → resolve deaths.
 3. `resolve()` handles each death in order: remove the unit, its `faint` ability, Ankh revival,
    Egyptian Afterlife, Viking Blood Rage, `friendAheadFaints` for the unit behind, `friendFaints`
    for everyone on that side.
@@ -176,7 +177,7 @@ Passive flags on the def: `blocks`, `armor`, `iaido`.
 | `faint` | `id` | Unit removed from its line |
 | `summon` | `side, index, unit` | New unit inserted at `index` |
 | `order` | `side, ids[], kicked` | Line reordered |
-| `syn` | `side, f` | An army bonus triggered |
+| `syn` | `side, f, again` | An army bonus triggered. `again` marks a repeat within the battle (Furor fires every round): the chip pulses but the callout is not shown a second time |
 | `end` | `result` | `win`, `lose` or `draw`, from side 0's view |
 
 `q: true` means "don't pause after this one", which is how simultaneous hits play together. A
@@ -199,7 +200,7 @@ The replay runs on its own clock (`T.clock`), advanced by `tick(dt * speed)`. `w
 `G.S = {conquered[], at, intro}` is the campaign. A region is conquered by winning a short
 expedition: `storyRun(S, id)` builds the options for a fresh run (3 lives, `goal` = the region's
 `wins`, `fast` tiers, `pool` = units of every army owned so far, `bonus` gold = lands conquered).
-`storyFoe(P)` describes the rival: the region's army only (the Gauls' region drafts from
+`storyFoe(P)` describes the rival: the region's army only (a wild army's region would draft from
 everything), capped army size, shifted income, and the champion on the battle that would complete
 the goal. `makeOpponent` adds the champion after drafting, replacing the weakest unit if the army
 is full; it carries `boss:true` into the battle snapshot so the view can crown it.
@@ -231,9 +232,20 @@ needs no unit), its effect in `useItem` or in the simulator (`hit`, `strike`, `r
 icon in `ART`, and for gear a 5×5 `g_<key>` marker. Give it a `short` of about a dozen
 characters for the shop card.
 
-**Add an army.** An entry in `FACTIONS`, its key in `REAL_F`, names in `ARMY_NAMES`, and the bonus
-itself wherever it applies (`startTurn`/`endTurn` for shop effects, `sl(u, f)` checks in the
-simulator for battle effects).
+**Add an army.** An entry in `FACTIONS` (`ARMIES` and `REAL_F` follow from it), names in
+`ARMY_NAMES`, a battlefield in `ARMY_THEME`, and the bonus itself wherever it applies
+(`startTurn`/`endTurn` for shop effects, `sl(u, f)` checks in the simulator for battle effects; a
+bonus that fires more than once a battle sets `again` on its repeat `syn` events, as Furor does).
+
+**Add the wild army.** The wild rule is in the code but no army uses it. Give the `FACTIONS` entry
+`wild:true`, `syn:'Wild'` and one line of text in `tiers[0]` (leave `tiers[1]` empty). Everything
+else reads the flag through `isWild`: `synergies` counts its units toward other armies, `sl` and
+`B.isF` share those armies' bonuses with them, Roman Drill reaches them, every bot favours them,
+bots are never named after them, and a region for them drafts its rivals from every army. The
+Collection screen and the field guide already lay out a one-line "Wild" bonus. Check it with a
+throwaway army in a `tools/sim.py` harness before drawing anything. The unit keys `sellsword` and
+`barbarian` and the region id `steppe` are remapped by `RENAMED` when an old save loads, so a new
+wild army must not reuse them.
 
 **Add a battle effect that needs new visuals.** Emit a new event type from the simulator and add a
 `PLAY` handler of the same name. Unknown event types are skipped by the replay.

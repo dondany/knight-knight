@@ -36,43 +36,53 @@ it by hand, so the things that only show up in motion are unverified:
 - **Region difficulty** now falls with the danger rating by the bot's measure, but tuning is very
   sensitive: one rival gold can swing a region from 25% to 90%, and any buff to a tier-1 unit
   brings the champion a turn earlier. Thebes and Sparta sit on the edge of their bands.
-- **Gauls are weak for the bot.** Since wild units stopped switching bonuses on alone, bot teams
-  holding one lose more often than they win against teams without: 41% wins to 48% losses with the
-  full row of five (38/54 when there were only the Ambactus and the Gaesatus, 53/39 before the
-  rule change, which was the exploit). The gap opens from turn 7. The bot still values them like
-  favoured-army units, and the Ambactus's ability never fires for it because it never leaves 2
-  gold unspent.
-- **Skirmish balance.** The armies are within 2.9 points of each other on a large sweep. Draws are
+- **Furor is new and only the bot has played it.** The Gauls stopped being the wild army and got
+  their own bonus: a Gaul that attacks gains +2/+2, or +4/+4 with four Gauls. It was sized so a
+  Gauls-only bot team wins as often as the other single-army teams (47%); a bot that favours Gauls
+  in a mixed draft is the strongest of the seven by about half a point, which is inside the noise.
+  Whether one Gaul snowballing at the front is fun to play with or against is unknown. If it is
+  too much, the numbers are the `2*sl(u,'gaul')` in `simulateBattle`.
+- **The Ambactus's ability never fires for the bot**, because it never leaves 2 gold unspent. The
+  ability also dates from when he was the Sellsword of the Mercenaries.
+- **Skirmish balance.** The armies are within 2.7 points of each other on a large sweep. Draws are
   about 10% of battles and cost nothing.
 - **Late skirmish.** Bot armies plateau around tier 4 and level 1.7 by turn 14.
 - **Unit names and abilities** were assigned by looking at each sprite. Some are guesses.
-- **The Gauls' names are first guesses.** The wild army was called Mercenaries until its row of the
+- **The Gauls' names are first guesses.** The army was called Mercenaries until its row of the
   sheet was finished as Gauls. The rename picked: Ambactus (a chief's sworn retainer) for the old
   Sellsword, Gaesatus (the spearmen who fought stripped) for the old Barbarian, Alesia for the
   land and Vercingetorix, a Chieftain, for its champion. Nobody but the bot has seen them yet.
-- **Alesia is a hard land next to home.** It moved from the middle of the map to the west, with
-  roads to Camelot and Rome, and kept its danger of 3. Kyoto is now reached straight from the
+- **Alesia is easy as a first conquest and hard as a fifth.** It sits next to Camelot with a
+  danger of 3. Its rivals now field only Gauls on 5 gold a turn. A bot that owns only the Medieval
+  army merges fast and conquers it every time; a bot with five armies to pick from wins 66%. The
+  other lands show the same gap (Kyoto 96% against 50%), so the danger ratings are only true for
+  the order in the table. Kyoto is now reached straight from the
   Norse Fjords or Thebes, so a player can march on it after a single conquest. The steppe in the
   middle of the map is empty; `docs/ideas.html` has armies proposed for it.
-- **Alesia's rivals are not all Gauls.** They draft from every army, favouring Gauls, as
-  Samarkand's did. A Gauls-only rival has no army bonus and a 1/2 opener, and the bot beat it
-  97% of the time; one more rival gold flipped that to 6%.
-- **Gauls for hire from the start** is undecided: `docs/ideas.html` suggests offering the tier 1
-  and 2 Gauls in every story expedition as the fix for the thin story start.
-- **The Chieftain counts its own army.** *Confederation* counts every different army on the team,
-  the wild one included, so the Chieftain is never weaker than 5/6. That was the plainest reading
-  of the proposal; count only the other armies if it turns out too safe a pick.
+- **Alesia's rival gold is a cliff.** With Furor, a Gauls-only rival on 6 to 9 gold a turn buys
+  two units a turn and the five-army bot conquers the land 3 to 30% of the time; on 5 gold it buys
+  one and the rate is 66%. There is no setting in between, so the champion's bonus (+3/+6) is the
+  fine knob.
+- **The wild rule has no army.** It is kept in the code behind a `wild` flag and was checked with a
+  throwaway army, but nothing in the game uses it. `docs/ideas.html` proposes the Mercenaries for
+  it, hired in every story expedition from turn 1 as the fix for the thin story start.
+- **The Chieftain was reworded with Furor.** *Confederation* counted every different army on the
+  team, which made sense for a wild unit and left him a bare 5/6 among his own. He now gains
+  +1/+1 for each other Gaul and each other army, so he is as good leading four Gauls as leading
+  four allies.
 - **The world map** is a rough hand-drawn polygon set. Sparta and Rome sit close together.
 - **Item variety** is thin (7 items), and every unit costs the same regardless of tier.
 - **Local art edits** need `tools/embed_sprite.py` to show up when opening the file from disk.
 
 ## Ideas
 
-Worked-out proposals live in `docs/ideas.html`: three more units for every army (fixes the thin
-story start), five new armies with a land each, and a table of ideas from other auto-battlers with
-the best fits marked. The three Gauls from that list are drawn and in the game; the other 43
-proposed units have no sprite yet. `docs/art-refs.html` has a drawing brief and reference pictures
-for each. The short list below is the rest.
+Worked-out proposals live in `docs/ideas.html`: three more units for every army, six new armies
+with a land each (the Poles, built around the winged hussars and fighting best when outnumbered,
+are the latest), the Mercenaries as the wild army (for hire from the start, which fixes the thin
+story start), and a table of ideas from other auto-battlers with the best fits marked. The three
+Gauls from that list are drawn and in the game; the other 53 proposed units have no sprite yet.
+`docs/art-refs.html` has a drawing brief and reference pictures for 43 of them; the Poles and the
+Mercenaries have none yet. The short list below is the rest.
 
 - Campaign depth: persistent veterans, a relic per conquered land, optional side battles, a final
   boss fielding every army.

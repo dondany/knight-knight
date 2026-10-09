@@ -283,9 +283,12 @@ const FACTIONS = {
   egypt:   {name:'Egyptians',color:'#e8c170', syn:'Afterlife',  tiers:['The first Egyptian to faint rises as a Mummy with half its stats.','Every Egyptian rises once as a Mummy with half its stats.']},
   roman:   {name:'Romans',   color:'#c65197', syn:'Drill',      tiers:['End of turn: a random Roman gains +1 health for good.','End of turn: every Roman gains +1 health for good.']},
   japan:   {name:'Japanese', color:'#df84a5', syn:'Bushido',    tiers:['Each Japanese unit deals +2 damage with its first attack.','Each Japanese unit deals +5 damage with its first attack.']},
-  gaul:    {name:'Gauls',    color:'#a8b5b2', syn:'Wild',       tiers:['Counts toward every army you field 2+ units of.','']},
+  gaul:    {name:'Gauls',    color:'#a8b5b2', syn:'Furor',      tiers:['After a Gaul attacks, it gains +2/+2.','After a Gaul attacks, it gains +4/+4.']},
 };
-const REAL_F = ['medieval','viking','spartan','egypt','roman','japan'];
+// An army can be flagged `wild:true` instead of having a bonus of its own (see synergies()). None is
+// today: the Gauls were wild until they got Furor, and the rule is kept for an army still to come.
+// REAL_F is the armies with a bonus; ARMIES is all of them.
+const ARMIES = Object.keys(FACTIONS), REAL_F = ARMIES.filter(f=>!FACTIONS[f].wild);
 
 const UNITS = {};
 function def(key,name,faction,tier,atk,hp,col,row,pos,ability,text,extra){
@@ -361,17 +364,17 @@ def('yumi','Yumi Archer','japan',3,1,3, 2,5, 2,'Arrow Rain','Friend ahead attack
 def('sohei','Sohei','japan',4,3,6, 4,5, 2,'Ward','Start of battle: {the friend ahead blocks its|the 2 friends ahead block their|the 3 friends ahead block their} first hit.',
   {on:{start(u,B){const a=B.allies(u),i=a.indexOf(u),t=a.slice(Math.max(0,i-u.lvl),i);if(!t.length)return;B.say(u);t.forEach(x=>B.ward(x,1))}}});
 def('samurai','Samurai','japan',5,6,4, 1,5, 0,'Iaido','Strikes first: an enemy it fells cannot strike back. Attacks deal {+0|+3|+6} damage.',{iaido:true});
-// --- Gauls (wild) ---
-def('carnyx','Carnyx Player','gaul',1,1,2, 4,6, 2,'Rally','Wild. End of turn: give the friend ahead {+1|+2|+3} health for good.',
+// --- Gauls ---
+def('carnyx','Carnyx Player','gaul',1,1,2, 4,6, 2,'Rally','End of turn: give the friend ahead {+1|+2|+3} health for good.',
   {shop:{endTurn(u,P,rng,slot){for(let i=slot-1;i>=0;i--)if(P.team[i]){pbuff(P,P.team[i],0,lvlOf(u));break}}}});
-def('druid','Druid','gaul',2,2,3, 1,6, 2,'Omen','Wild. Start of battle: deal {3|6|9} damage to the enemy with the highest attack.',
+def('druid','Druid','gaul',2,2,3, 1,6, 2,'Omen','Start of battle: deal {3|6|9} damage to the enemy with the highest attack.',
   {on:{start(u,B){const f=B.foes(u);if(!f.length)return;B.say(u);B.shoot(u,[f.reduce((a,b)=>b.atk>a.atk?b:a)],3*u.lvl)}}});
-def('ambactus','Ambactus','gaul',3,3,5, 2,6, 1,'Paid in Gold','Wild. End of turn: if you have 2+ unspent gold, gain {+1/+1|+2/+2|+3/+3} for good.',
+def('ambactus','Ambactus','gaul',3,3,5, 2,6, 1,'Paid in Gold','End of turn: if you have 2+ unspent gold, gain {+1/+1|+2/+2|+3/+3} for good.',
   {shop:{endTurn(u,P){if(P.gold>=2){const l=lvlOf(u);pbuff(P,u,l,l)}}}});
-def('gaesatus','Gaesatus','gaul',4,5,5, 0,6, 0,'Frenzy','Wild. After attack: gain {+2|+4|+6} attack.',
+def('gaesatus','Gaesatus','gaul',4,5,5, 0,6, 0,'Frenzy','After attack: gain {+2|+4|+6} attack.',
   {on:{afterAttack(u,B){B.say(u);B.buff(u,2*u.lvl,0)}}});
-def('chieftain','Chieftain','gaul',5,4,5, 3,6, 0,'Confederation','Wild. Start of battle: gain {+1/+1|+2/+2|+3/+3} for each different army on your team.',
-  {on:{start(u,B){const n=new Set(B.allies(u).map(x=>x.def.faction)).size;B.say(u);B.buff(u,n*u.lvl,n*u.lvl)}}});
+def('chieftain','Chieftain','gaul',5,4,5, 3,6, 0,'Confederation','Start of battle: gain {+1/+1|+2/+2|+3/+3} for each other Gaul and each other army on your team.',
+  {on:{start(u,B){const o=B.allies(u).filter(x=>x!==u),n=o.filter(x=>x.def.faction==='gaul').length+new Set(o.map(x=>x.def.faction).filter(f=>f!=='gaul')).size;if(!n)return;B.say(u);B.buff(u,n*u.lvl,n*u.lvl)}}});
 
 const UNIT_KEYS = Object.keys(UNITS);
 
@@ -387,11 +390,12 @@ const ITEMS = {
 };
 const ITEM_KEYS = Object.keys(ITEMS);
 
-// Gauls are wild: each adds +1 to every army that already has 2 real members (`w` = wilds counted).
-// They push a bonus to its next tier but cannot switch one on alone.
+// Units of a wild army each add +1 to every army that already has 2 real members (`w` = wilds counted)
+// and share those armies' bonuses. They push a bonus to its next tier but cannot switch one on alone.
+const isWild = f => !!FACTIONS[f].wild;
 function synergies(units){
   const real={}; let wild=0;
-  for(const u of units){ if(!u) continue; const f=UNITS[u.key].faction; if(f==='gaul') wild++; else real[f]=(real[f]||0)+1; }
+  for(const u of units){ if(!u) continue; const f=UNITS[u.key].faction; if(isWild(f)) wild++; else real[f]=(real[f]||0)+1; }
   const out={};
   for(const f in real){ const w=real[f]>=2?wild:0, n=real[f]+w; out[f]={n, w, lvl:n>=4?2:n>=2?1:0}; }
   return out;
@@ -481,7 +485,7 @@ function endTurn(P,rng){
   P.team.forEach((u,i)=>{ if(!u) return; const h=UNITS[u.key].shop; if(h&&h.endTurn) h.endTurn(u,P,rng,i); });
   const s=synergies(P.team).roman;
   if(s&&s.lvl){
-    const rs=P.team.filter(u=>u&&['roman','gaul'].includes(UNITS[u.key].faction));
+    const rs=P.team.filter(u=>{ const f=u&&UNITS[u.key].faction; return f==='roman'||(f&&isWild(f)); });
     (s.lvl>1?rs:[rng.pick(rs)]).forEach(u=>pbuff(P,u,0,1));
   }
 }
@@ -493,12 +497,12 @@ function simulateBattle(TA,TB,seed){
   [TA,TB].forEach((t,s)=>{
     const us=t.filter(Boolean), syn=synergies(us);
     sides[s]=us.map(u=>{const d=UNITS[u.key],l=lvlOf(u);return{id:++nid,key:u.key,def:d,side:s,atk:u.atk,hp:u.hp,hp0:u.hp,lvl:l,gear:u.gear||null,boss:!!u.boss,block:(d.blocks?l:0)+(u.gear==='shield'?1:0),dead:false,tb:rng()}});
-    meta[s]={syn,afterlife:syn.egypt?[0,1,9][syn.egypt.lvl]:0};
+    meta[s]={syn,afterlife:syn.egypt?[0,1,9][syn.egypt.lvl]:0,furor:0};
   });
   const snap=u=>({id:u.id,key:u.key,side:u.side,atk:u.atk,hp:u.hp,lvl:u.lvl,gear:u.gear,block:u.block,mummy:!!u.mummy,boss:!!u.boss});
   const alive=L=>L.filter(u=>!u.dead);
   // synergy level `u` enjoys for faction f (0 if none)
-  const sl=(u,f)=>{const s=meta[u.side].syn[f];if(!s||u.mummy)return 0;const uf=u.def.faction;return(uf===f||uf==='gaul')?s.lvl:0};
+  const sl=(u,f)=>{const s=meta[u.side].syn[f];if(!s||u.mummy)return 0;const uf=u.def.faction;return(uf===f||isWild(uf))?s.lvl:0};
   const trig=(u,n,a,b)=>{const f=u.def.on&&u.def.on[n];if(f)f(u,B,a,b)};
 
   function hit(t,amt,src,q){
@@ -516,7 +520,7 @@ function simulateBattle(TA,TB,seed){
     i=Math.min(i,L.length); L.splice(i,0,u); ev.push({t:'summon',side,index:i,unit:snap(u)}); return u;
   }
   const B={rng,
-    foes:u=>alive(sides[1-u.side]), allies:u=>alive(sides[u.side]), isF:(u,f)=>!u.mummy&&(u.def.faction===f||(u.def.faction==='gaul'&&!!(meta[u.side].syn[f]&&meta[u.side].syn[f].w))),
+    foes:u=>alive(sides[1-u.side]), allies:u=>alive(sides[u.side]), isF:(u,f)=>!u.mummy&&(u.def.faction===f||(isWild(u.def.faction)&&!!(meta[u.side].syn[f]&&meta[u.side].syn[f].w))),
     say(u){ev.push({t:'ability',id:u.id,name:u.def.ability})},
     buff(u,da,dh,q){ if(u.dead) return; const a0=u.atk,h0=u.hp; u.atk=Math.max(1,Math.min(CAP,u.atk+da)); u.hp=Math.min(CAP,u.hp+dh); ev.push({t:'buff',id:u.id,da:u.atk-a0,dh:u.hp-h0,atk:u.atk,hp:u.hp,q:!!q}); },
     buffAll(us,da,dh){us.forEach((x,i)=>B.buff(x,da,dh,i<us.length-1))},
@@ -561,6 +565,8 @@ function simulateBattle(TA,TB,seed){
     else { hit(b,da,a,true); hit(a,db,b); }
     for(const s of [sides[0][1],sides[1][1]]) if(s&&!s.dead) trig(s,'friendAheadAttacks');
     for(const u of [a,b]) if(!u.dead) trig(u,'afterAttack');
+    // Furor: a Gaul that attacked and is still standing comes out of it bigger (`again` = already called out this battle)
+    [a,b].filter(u=>!u.dead&&sl(u,'gaul')).forEach((u,i,us)=>{ const n=2*sl(u,'gaul'); ev.push({t:'syn',side:u.side,f:'gaul',again:meta[u.side].furor++>0}); B.buff(u,n,n,i<us.length-1); });
     if(b.dead&&!a.dead) trig(a,'knockout');
     if(a.dead&&!b.dead) trig(b,'knockout');
     resolve();
@@ -571,7 +577,7 @@ function simulateBattle(TA,TB,seed){
 }
 
 // ---------- opponents: a greedy bot that plays the same shop as you ----------
-function unitValue(u,fav){const d=UNITS[u.key];return u.atk+u.hp+d.tier*3+u.xp*2+(d.faction===fav||d.faction==='gaul'?4:0)+(u.gear?2:0)}
+function unitValue(u,fav){const d=UNITS[u.key];return u.atk+u.hp+d.tier*3+u.xp*2+(d.faction===fav||isWild(d.faction)?4:0)+(u.gear?2:0)}
 function arrange(P){
   const us=P.team.filter(Boolean).sort((a,b)=>UNITS[a.key].pos-UNITS[b.key].pos||b.hp-a.hp);
   P.team=[0,1,2,3,4].map(i=>us[i]||null);
@@ -582,7 +588,7 @@ function botShop(P,rng,fav){
     let best=null; const consider=c=>{if(!best||c.sc>best.sc)best=c};
     if(P.gold>=COST){
       P.shop.forEach((s,i)=>{
-        const d=UNITS[s.u.key], base=d.tier*2+(d.faction===fav||d.faction==='gaul'?5:0)+rng()*2;
+        const d=UNITS[s.u.key], base=d.tier*2+(d.faction===fav||isWild(d.faction)?5:0)+rng()*2;
         const dup=P.team.findIndex(x=>canMerge(x,s.u)), empty=P.team.filter(Boolean).length<P.cap?P.team.indexOf(null):-1;
         if(dup>=0) consider({k:'buy',i,slot:dup,sc:base+5});
         else if(empty>=0) consider({k:'buy',i,slot:empty,sc:base+4});
@@ -623,8 +629,8 @@ function makeOpponent(turn,rng,foe){
   const fav=foe.fav||rng.pick(REAL_F), P=newPlayer({pool:foe.pool,fast:foe.fast,cap:foe.cap}), waste=foe.gold!=null?-foe.gold:rng.int(3);
   for(let t=1;t<=turn;t++){ P.turn=t; startTurn(P,rng); P.gold=Math.max(3,P.gold-waste); botShop(P,rng,fav); endTurn(P,rng); P.fx.length=0; }
   // name the army after whatever it actually ended up fielding
-  const n={}; P.team.forEach(u=>{ if(u){ const f=UNITS[u.key].faction; if(f!=='gaul') n[f]=(n[f]||0)+1; } });
-  const army=fav==='gaul'?'gaul':REAL_F.reduce((a,f)=>(n[f]||0)>(n[a]||0)?f:a,fav);
+  const n={}; P.team.forEach(u=>{ if(u){ const f=UNITS[u.key].faction; if(!isWild(f)) n[f]=(n[f]||0)+1; } });
+  const army=isWild(fav)?fav:REAL_F.reduce((a,f)=>(n[f]||0)>(n[a]||0)?f:a,fav);
   let name=rng.pick(ARMY_NAMES[army]);
   if(foe.boss){
     // the region's leader joins the last battle: tougher than a recruit, taking the weakest unit's place
@@ -646,7 +652,7 @@ const REGIONS = {
   rome:  {name:'Rome',         army:'roman',    x:129, y:88,  wins:3, danger:1, cap:3, gold:-3, boss:['caesar','Caesar',2],          blurb:'All roads lead here, and a legion guards every one.'},
   sparta:{name:'Sparta',       army:'spartan',  x:153, y:101, wins:4, danger:2, cap:4, gold:-5, boss:['leonidas','King Leonidas',2], blurb:'A city without walls. Its men are the walls.'},
   egypt: {name:'Thebes',       army:'egypt',    x:166, y:121, wins:4, danger:3, cap:4, gold:-2, boss:['pharaoh','The Pharaoh',1],    blurb:'In the valley of the kings, the dead do not rest.'},
-  gaul:  {name:'Alesia',       army:'gaul',     x:102, y:90,  wins:5, danger:3, cap:4, gold:-1, boss:['chieftain','Vercingetorix',3], blurb:'Behind the palisade, the tribes and every ally they could call follow one chief.'},
+  gaul:  {name:'Alesia',       army:'gaul',     x:102, y:90,  wins:5, danger:3, cap:4, gold:-5, boss:['chieftain','Vercingetorix',3], blurb:'Behind the palisade, every tribe of Gaul follows one chief.'},
   japan: {name:'Kyoto',        army:'japan',    x:290, y:82,  wins:5, danger:4, cap:5, gold:-2, boss:['samurai','The Shogun',0],     blurb:'At the edge of the map, the Shogun waits beneath the blossoms.'},
 };
 // [from, to, waypoint x, waypoint y]
@@ -662,7 +668,7 @@ function storyRun(S,id){
 }
 function storyFoe(P){
   const R=REGIONS[P.story];
-  return {fav:R.army,pool:R.army==='gaul'?null:armyUnits(R.army),fast:true,gold:R.gold,cap:R.cap,boss:P.wins>=P.goal-1?{key:R.boss[0],name:R.boss[1],bonus:R.boss[2]}:null};
+  return {fav:R.army,pool:isWild(R.army)?null:armyUnits(R.army),fast:true,gold:R.gold,cap:R.cap,boss:P.wins>=P.goal-1?{key:R.boss[0],name:R.boss[1],bonus:R.boss[2]}:null};
 }
 // shortest walk from where you stand to `to`, passing only through conquered regions
 function storyPath(S,to){
@@ -1256,7 +1262,7 @@ const PLAY={
     floater(u.x,FIELD_Y-27,u.mummy?'MUMMY':'RETURNS','buff'); sfx('summon'); await wait(380); },
   async order(e){ const L=BV.views[e.side]; L.sort((a,b)=>e.ids.indexOf(a.id)-e.ids.indexOf(b.id)); layout(e.side); const u=view(e.kicked);
     if(u){ tween(u,'oy',-18,180,()=>tween(u,'oy',0,180,()=>dust(u.tx,FIELD_Y,5,THEMES[G.theme].dust))); spark(u.x,FIELD_Y-9,'#e8c170'); } shake(2.5,220); sfx('bighit'); await wait(430); },
-  async syn(e){ const f=FACTIONS[e.f]; floater(e.side?232:88,FIELD_Y-40,f.syn.toUpperCase(),'syn',f.color); chipFire(e.side,e.f); },
+  async syn(e){ const f=FACTIONS[e.f]; if(!e.again) floater(e.side?232:88,FIELD_Y-40,f.syn.toUpperCase(),'syn',f.color); chipFire(e.side,e.f); },
   async end(){ BV.views.forEach(L=>L.forEach(u=>u.cheer=T.clock)); await wait(520); },
 };
 async function playBattle(sim){
@@ -1397,7 +1403,7 @@ function refreshUI(){
     $('mapProg').textContent=`${S.conquered.length-1} of ${REGION_KEYS.length} lands conquered`;
     $('maplbls').innerHTML=Object.keys(REGIONS).map(id=>{ const R=REGIONS[id], done=S.conquered.includes(id), o=open.includes(id); return `<div class="maplbl ${done?'done':o?'':'lock'}" style="left:calc(var(--u)*${R.x});top:calc(var(--u)*${R.y+5})">${R.name}</div>`; }).join('');
     const have=S.conquered.map(c=>REGIONS[c].army);
-    $('crests').innerHTML='<span>YOUR ARMIES</span>'+[...REAL_F,'gaul'].map(a=>`<i class="${have.includes(a)?'':'off'} ${G.map.fresh&&REGIONS[G.map.fresh].army===a?'new':''}" style="--c:${FACTIONS[a].color}" title="${FACTIONS[a].name}"></i>`).join('');
+    $('crests').innerHTML='<span>YOUR ARMIES</span>'+ARMIES.map(a=>`<i class="${have.includes(a)?'':'off'} ${G.map.fresh&&REGIONS[G.map.fresh].army===a?'new':''}" style="--c:${FACTIONS[a].color}" title="${FACTIONS[a].name}"></i>`).join('');
     $('mapcard').innerHTML=mapCard();
   }
   refreshInfo();
@@ -1641,7 +1647,7 @@ $('btnHome').onclick=()=>{
 function modal(html){ $('modalBox').innerHTML=html; $('modal').classList.add('hide'); void $('modal').offsetWidth; show('modal',true); }
 function closeModal(){ show('modal',false); }
 // ---------- collection: every army, unit and item on one screen ----------
-const COLL_TABS=[...REAL_F,'gaul','items'];
+const COLL_TABS=[...ARMIES,'items'];
 const fmtAll=text=>text.replace(/\{([^}]+)\}/g,(m,s)=>`<b>${s.split('|').join(' / ')}</b>`);
 let collTab='medieval';
 function collection(tab){
@@ -1669,7 +1675,7 @@ function help(){
 <li><b>Recruit.</b> You get 10 gold a turn. Drag a card from your hand onto your line: units and supplies cost ${COST}, and a fresh hand costs 1.</li>
 <li><b>Arrange.</b> Drag units to reorder them. The <b>front</b> of your line is on the right and fights first.</li>
 <li><b>Merge.</b> Drop a unit on its twin to combine them. Three copies make level 2, six make level 3, and abilities grow with each level. A gold arrow on a card means it would merge with a unit you field.</li>
-<li><b>Armies.</b> Field 2 or 4 units from the same army to switch on its bonus. Gauls count toward every army you already field 2 of.</li>
+<li><b>Armies.</b> Field 2 or 4 units from the same army to switch on its bonus.</li>
 <li><b>Story.</b> Start with the Medieval army and march across the map. Win a land's battles and beat its champion to add its army to your recruits.</li>
 <li><b>Skirmish.</b> Every army from the start. Win ${WINS} battles before you lose ${LIVES} lives.</li>
 <li><b>Freeze.</b> A frozen card stays in your hand through rolls and into the next turn, for free. Select a card and press Freeze, right-click it, or point at it and press F. Do the same again to thaw it.</li>
