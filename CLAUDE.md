@@ -1,6 +1,6 @@
 # Knight Knight
 
-A 2D pixel-art auto-battler. Draft units from six historical armies in a shop phase, then watch
+A 2D pixel-art auto-battler. Draft units from eight historical armies in a shop phase, then watch
 them fight a rival army on their own. Two modes: **Story** (a world map; start with the Medieval
 army, conquer regions to unlock the others) and **Skirmish** (every army, 10 wins before 5 losses).
 Ships as one static page for GitHub Pages.
@@ -8,10 +8,11 @@ Ships as one static page for GitHub Pages.
 ## Layout
 
 - `index.html` – the whole game: CSS, markup and one inline script. No build step, no dependencies.
-- `characters.PNG` – 80×112 sprite sheet, 16×16 cells, 5 per row, 7 rows. Rows 0–5 are the armies
-  (medieval, vikings, spartans, egyptians, romans, japanese); row 6 holds the Gauls (key `gaul`;
-  they were the wild army, first called Mercenaries with key `merc`, until they got their own
-  bonus. The wild rule is still in the code, waiting for an army: see docs/ARCHITECTURE.md).
+- `characters.PNG` – 80×128 sprite sheet, 16×16 cells, 5 per row, 8 rows, one army per row:
+  medieval, vikings, spartans, egyptians, romans, japanese, then the Gauls (key `gaul`; they were
+  the wild army, first called Mercenaries with key `merc`, until they got their own bonus. The
+  wild rule is still in the code, waiting for an army: see docs/ARCHITECTURE.md) and the Poles
+  (key `poland`).
 - `tools/` – dev helpers (rules sim, screenshots, sprite re-embed). Not needed to run the game.
 - `docs/ARCHITECTURE.md` – code map, battle event log, recipes for adding content, testing, gotchas.
 - `docs/DESIGN.md` – rules, numbers, every unit and item, balance snapshot.

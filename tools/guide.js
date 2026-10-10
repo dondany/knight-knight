@@ -131,10 +131,11 @@ ${ARMIES.map(armySection).join('\n')}
 <h2>Battle</h2>
 <p class="lead">Battles are fully automatic and decided by a seeded simulation, so the same two armies with the same seed always play out the same way.</p>
 <ol class="steps">
+<li><b>Outnumbered.</b> A side that starts with fewer units than its enemy is outnumbered from the first moment, and the Poles' Against the Odds and the Hetman fire before anything else.</li>
 <li><b>Start of battle.</b> Every start-of-battle ability fires once, in order of attack, highest first. Units felled here are removed before the next ability fires.</li>
 <li><b>The clash.</b> The two front units hit each other at the same moment. Gear and first-attack bonuses are added to the hit. Then blocks cancel the hit entirely, or armour reduces it. A hit that lands always deals at least 1.</li>
 <li><b>Reactions.</b> The unit second in line fires its support ability, then the fronts fire their after-attack abilities, a Gaul's Furor and knockouts.</li>
-<li><b>Deaths.</b> For each fallen unit, in order: its faint ability, an Ankh revival, Egyptian Afterlife, Viking Blood Rage, then the reactions of the friends still standing.</li>
+<li><b>Deaths.</b> For each fallen unit, in order: its faint ability, an Ankh revival, Egyptian Afterlife, Viking Blood Rage, then the reactions of the friends still standing. If the deaths leave a side outnumbered for the first time, Against the Odds and the Hetman fire.</li>
 <li><b>Repeat</b> until one side is empty. If both sides are empty at once, it is a draw.</li>
 </ol>
 <h3>Ability triggers</h3>
@@ -146,6 +147,7 @@ ${ARMIES.map(armySection).join('\n')}
 <div><b>Faint</b><br>This unit falls.</div>
 <div><b>Knockout</b><br>Its attack felled the enemy front and it survived.</div>
 <div><b>Friend ahead faints / Friend faints</b><br>The unit directly in front, or any friend, falls.</div>
+<div><b>Outnumbered</b><br>The first time in a battle the enemy has more units standing than you: at the start, or after deaths.</div>
 <div><b>Buy / Sell / End of turn</b><br>Shop triggers. Their gains are permanent.</div>
 </div>
 <p class="note">Units summoned in battle do not appear if the side already has 5 units standing. Buffs gained in battle last only for that battle; buffs gained in the shop are kept.</p>
@@ -164,7 +166,7 @@ ${mapSvg()}
 <li>Conquering all ${nRegions} lands ends the story.</li>
 </ul>
 ${regionTable()}
-<p class="note">"Rival gold" is what the rival bot gets to spend each turn against your 10.</p>
+<p class="note">"Rival gold" is what the rival bot gets to spend each turn against your 10. Kraków's rivals field four Poles: bring five units and you set off their Against the Odds yourself.</p>
 </section>
 
 <section id="rivals">
@@ -175,6 +177,7 @@ ${regionTable()}
 <li>It buys gear for units without any, and War Manuals and Feasts once it has 3 units, then rerolls with what is left.</li>
 <li>In Skirmish each rival wastes 0–2 gold a turn, so some are stronger than others.</li>
 <li>It lines up bruisers in front and support units behind.</li>
+<li>A rival with four Poles leaves its fifth slot empty on purpose.</li>
 </ul>
 </section>
 

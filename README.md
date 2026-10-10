@@ -1,7 +1,7 @@
 # Knight Knight
 
 A pixel-art auto-battler. Draft an army from across history — medieval knights, Vikings, Spartans,
-Egyptians, Romans and samurai — then let them fight it out.
+Egyptians, Romans, samurai, Gauls and Polish winged hussars — then let them fight it out.
 
 The whole game is one static page: `index.html` plus the sprite sheet. No build step, no dependencies.
 
@@ -47,8 +47,10 @@ Both modes save automatically in the browser.
 | Egyptians | Afterlife | First to faint rises as a half-strength Mummy | Every Egyptian rises once |
 | Romans | Drill | A random Roman gains +1 health each turn | Every Roman does |
 | Japanese | Bushido | First attack deals +2 damage | First attack deals +5 damage |
+| Gauls | Furor | A Gaul that attacks gains +2/+2 | …gains +4/+4 |
+| Poles | Against the Odds | The first time the enemy outnumbers you, every Pole gains +2/+2 | …gains +4/+4 |
 
-All 35 units, 7 items and the exact numbers are in the
+All 40 units, 7 items and the exact numbers are in the
 [field guide](https://dondany.github.io/knight-knight/docs/) and in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Project layout

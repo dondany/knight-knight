@@ -284,7 +284,10 @@ const FACTIONS = {
   roman:   {name:'Romans',   color:'#c65197', syn:'Drill',      tiers:['End of turn: a random Roman gains +1 health for good.','End of turn: every Roman gains +1 health for good.']},
   japan:   {name:'Japanese', color:'#df84a5', syn:'Bushido',    tiers:['Each Japanese unit deals +2 damage with its first attack.','Each Japanese unit deals +5 damage with its first attack.']},
   gaul:    {name:'Gauls',    color:'#a8b5b2', syn:'Furor',      tiers:['After a Gaul attacks, it gains +2/+2.','After a Gaul attacks, it gains +4/+4.']},
+  poland:  {name:'Poles',    color:'#a53030', syn:'Against the Odds', tiers:['The first time the enemy outnumbers you in a battle, every Pole gains +2/+2.','The first time the enemy outnumbers you in a battle, every Pole gains +4/+4.'], field:4},
 };
+// `field` is where a bot stops recruiting once it fields that many units of the army (default: fill all 5 slots).
+// Four Poles want the shorter line, so that their bonus fires before the first clash.
 // An army can be flagged `wild:true` instead of having a bonus of its own (see synergies()). None is
 // today: the Gauls were wild until they got Furor, and the rule is kept for an army still to come.
 // REAL_F is the armies with a bonus; ARMIES is all of them.
@@ -375,6 +378,15 @@ def('gaesatus','Gaesatus','gaul',4,5,5, 0,6, 0,'Frenzy','After attack: gain {+2|
   {on:{afterAttack(u,B){B.say(u);B.buff(u,2*u.lvl,0)}}});
 def('chieftain','Chieftain','gaul',5,4,5, 3,6, 0,'Confederation','Start of battle: gain {+1/+1|+2/+2|+3/+3} for each other Gaul and each other army on your team.',
   {on:{start(u,B){const o=B.allies(u).filter(x=>x!==u),n=o.filter(x=>x.def.faction==='gaul').length+new Set(o.map(x=>x.def.faction).filter(f=>f!=='gaul')).size;if(!n)return;B.say(u);B.buff(u,n*u.lvl,n*u.lvl)}}});
+// --- Poles ---
+def('kosynier','Kosynier','poland',1,3,1, 0,7, 0,'Scythes Upright','Before attack: deal {1|2|3} damage to the front enemy.',
+  {on:{beforeAttack(u,B){const f=B.foes(u);if(!f.length)return;B.say(u);B.shoot(u,[f[0]],u.lvl)}}});
+def('haiduk','Haiduk','poland',2,2,3, 4,7, 1,'Salvo','Friend ahead faints: deal {3|6|9} damage to the front enemy.',
+  {on:{friendAheadFaints(u,B){const f=B.foes(u);if(!f.length)return;B.say(u);B.shoot(u,[f[0]],3*u.lvl)}}});
+def('pancerny','Pancerny','poland',3,3,5, 3,7, 0,'Hold Fast','Takes {1|2|3} less damage (min 1) while the enemy has more units standing.',{holdfast:true});
+def('husarz','Husarz','poland',5,6,5, 1,7, 0,'Szarża','Its first attack also strikes the {enemy|2 enemies|3 enemies} behind the front.',{charge:true});
+def('hetman','Hetman','poland',6,5,7, 2,7, 2,'Odsiecz','The first time the enemy outnumbers you each battle: deal {3|6|9} damage to every enemy.',
+  {on:{outnumbered(u,B){const f=B.foes(u);if(!f.length)return;B.say(u);B.shoot(u,f,3*u.lvl)}}});
 
 const UNIT_KEYS = Object.keys(UNITS);
 
@@ -497,18 +509,20 @@ function simulateBattle(TA,TB,seed){
   [TA,TB].forEach((t,s)=>{
     const us=t.filter(Boolean), syn=synergies(us);
     sides[s]=us.map(u=>{const d=UNITS[u.key],l=lvlOf(u);return{id:++nid,key:u.key,def:d,side:s,atk:u.atk,hp:u.hp,hp0:u.hp,lvl:l,gear:u.gear||null,boss:!!u.boss,block:(d.blocks?l:0)+(u.gear==='shield'?1:0),dead:false,tb:rng()}});
-    meta[s]={syn,afterlife:syn.egypt?[0,1,9][syn.egypt.lvl]:0,furor:0};
+    meta[s]={syn,afterlife:syn.egypt?[0,1,9][syn.egypt.lvl]:0,furor:0,rally:false};
   });
   const snap=u=>({id:u.id,key:u.key,side:u.side,atk:u.atk,hp:u.hp,lvl:u.lvl,gear:u.gear,block:u.block,mummy:!!u.mummy,boss:!!u.boss});
   const alive=L=>L.filter(u=>!u.dead);
   // synergy level `u` enjoys for faction f (0 if none)
   const sl=(u,f)=>{const s=meta[u.side].syn[f];if(!s||u.mummy)return 0;const uf=u.def.faction;return(uf===f||isWild(uf))?s.lvl:0};
   const trig=(u,n,a,b)=>{const f=u.def.on&&u.def.on[n];if(f)f(u,B,a,b)};
+  // is u's side outnumbered right now?
+  const short=u=>alive(sides[1-u.side]).length>alive(sides[u.side]).length;
 
   function hit(t,amt,src,q){
     if(!t||t.dead) return;
     if(t.block>0){ t.block--; ev.push({t:'block',id:t.id,block:t.block,q:!!q}); return; }
-    const red=(t.def.armor?t.lvl:0)+sl(t,'spartan')+(t.gear==='chainmail'?2:0);
+    const red=(t.def.armor?t.lvl:0)+(t.def.holdfast&&short(t)?t.lvl:0)+sl(t,'spartan')+(t.gear==='chainmail'?2:0);
     amt=Math.max(1,amt-red); t.hp-=amt;
     ev.push({t:'dmg',id:t.id,amt,hp:Math.max(0,t.hp),q:!!q});
     if(t.hp<=0){ t.dead=true; dying.push(t); } else trig(t,'hurt');
@@ -519,17 +533,32 @@ function simulateBattle(TA,TB,seed){
     const u={id:++nid,key:spec.key,def:spec.mummy?MUMMY:d,side,atk:spec.atk,hp:spec.hp,hp0:spec.hp,lvl:l,gear:null,block:(!spec.mummy&&d.blocks?l:0),dead:false,risen:true,mummy:!!spec.mummy,tb:0};
     i=Math.min(i,L.length); L.splice(i,0,u); ev.push({t:'summon',side,index:i,unit:snap(u)}); return u;
   }
+  const volley=(src,ts,amt)=>{ ev.push({t:'shot',from:src.id,to:ts.map(x=>x.id)}); ts.forEach((x,i)=>hit(x,amt,src,i<ts.length-1)); };
   const B={rng,
     foes:u=>alive(sides[1-u.side]), allies:u=>alive(sides[u.side]), isF:(u,f)=>!u.mummy&&(u.def.faction===f||(isWild(u.def.faction)&&!!(meta[u.side].syn[f]&&meta[u.side].syn[f].w))),
     say(u){ev.push({t:'ability',id:u.id,name:u.def.ability})},
     buff(u,da,dh,q){ if(u.dead) return; const a0=u.atk,h0=u.hp; u.atk=Math.max(1,Math.min(CAP,u.atk+da)); u.hp=Math.min(CAP,u.hp+dh); ev.push({t:'buff',id:u.id,da:u.atk-a0,dh:u.hp-h0,atk:u.atk,hp:u.hp,q:!!q}); },
     buffAll(us,da,dh){us.forEach((x,i)=>B.buff(x,da,dh,i<us.length-1))},
     hit, summon,
-    shoot(src,ts,amt){ ts=ts.filter(Boolean); if(!ts.length) return; ev.push({t:'shot',from:src.id,to:ts.map(x=>x.id)}); ts.forEach((x,i)=>hit(x,amt,src,i<ts.length-1)); },
+    shoot(src,ts,amt){ ts=ts.filter(Boolean); if(ts.length) volley(src,ts,amt); },
     ward(u,n){ u.block+=n; ev.push({t:'status',id:u.id,block:u.block}); },
     kick(t){ const L=sides[t.side]; if(alive(L).length<2) return; L.splice(L.indexOf(t),1); L.push(t); ev.push({t:'order',side:t.side,ids:L.map(x=>x.id),kicked:t.id}); },
   };
+  // The first time a side has the shorter line: Against the Odds rallies its Poles (once a battle),
+  // then `outnumbered` abilities fire (once per unit).
+  function relief(){
+    for(const L of sides){
+      const us=alive(L); if(!us.length||!short(us[0])) continue;
+      const m=meta[us[0].side], ps=us.filter(u=>sl(u,'poland'));
+      if(!m.rally&&ps.length){ m.rally=true; const n=2*sl(ps[0],'poland'); ev.push({t:'syn',side:us[0].side,f:'poland'}); B.buffAll(ps,n,n); }
+      for(const u of us) if(!u.relief&&!u.dead&&u.def.on&&u.def.on.outnumbered){ u.relief=true; trig(u,'outnumbered'); }
+    }
+  }
   function resolve(){
+    let guard=0;
+    do{ deaths(); relief(); } while(dying.length&&guard++<50);
+  }
+  function deaths(){
     let guard=0;
     while(dying.length&&guard++<200){
       const u=dying.shift(), L=sides[u.side], i=L.indexOf(u); if(i<0) continue;
@@ -546,8 +575,11 @@ function simulateBattle(TA,TB,seed){
     }
   }
   const strike=u=>{ let d=u.atk+(u.gear==='whetstone'?3:0)+(u.def.iaido?(u.lvl-1)*3:0); if(!u.struck) d+=[0,2,5][sl(u,'japan')]; return d; };
+  // Szarża: the first attack carries on into the units behind the front (which may have just fallen but is still in line)
+  const charge=(u,d)=>{ if(!u.def.charge||u.charged) return; u.charged=true; const ts=sides[1-u.side].slice(1,1+u.lvl).filter(x=>!x.dead); if(ts.length){ B.say(u); volley(u,ts,d); } };
 
   ev.push({t:'init',units:[...sides[0],...sides[1]].map(snap)});
+  resolve();   // a side that starts with the shorter line is outnumbered from the first moment
   [...sides[0],...sides[1]].filter(u=>u.def.on&&u.def.on.start).sort((x,y)=>y.atk-x.atk||x.tb-y.tb)
     .forEach(u=>{ if(!u.dead){ trig(u,'start'); resolve(); } });
 
@@ -560,9 +592,11 @@ function simulateBattle(TA,TB,seed){
     ev.push({t:'attack',a:a.id,b:b.id});
     const da=strike(a), db=strike(b); a.struck=b.struck=true; a.ready=b.ready=false;
     const ia=!!a.def.iaido, ib=!!b.def.iaido;
-    if(ia&&!ib){ hit(b,da,a); if(!b.dead) hit(a,db,b); }
-    else if(ib&&!ia){ hit(a,db,b); if(!a.dead) hit(b,da,a); }
+    let sa=true, sb=true;   // did each front get its blow in?
+    if(ia&&!ib){ hit(b,da,a); if(b.dead) sb=false; else hit(a,db,b); }
+    else if(ib&&!ia){ hit(a,db,b); if(a.dead) sa=false; else hit(b,da,a); }
     else { hit(b,da,a,true); hit(a,db,b); }
+    if(sa) charge(a,da); if(sb) charge(b,db);
     for(const s of [sides[0][1],sides[1][1]]) if(s&&!s.dead) trig(s,'friendAheadAttacks');
     for(const u of [a,b]) if(!u.dead) trig(u,'afterAttack');
     // Furor: a Gaul that attacked and is still standing comes out of it bigger (`again` = already called out this battle)
@@ -583,13 +617,13 @@ function arrange(P){
   P.team=[0,1,2,3,4].map(i=>us[i]||null);
 }
 function botShop(P,rng,fav){
-  let guard=0;
+  let guard=0; const fld=FACTIONS[fav].field, cap=()=>fld&&P.team.filter(u=>u&&UNITS[u.key].faction===fav).length>=fld?Math.min(P.cap,fld):P.cap;
   while(guard++<80){
     let best=null; const consider=c=>{if(!best||c.sc>best.sc)best=c};
     if(P.gold>=COST){
       P.shop.forEach((s,i)=>{
         const d=UNITS[s.u.key], base=d.tier*2+(d.faction===fav||isWild(d.faction)?5:0)+rng()*2;
-        const dup=P.team.findIndex(x=>canMerge(x,s.u)), empty=P.team.filter(Boolean).length<P.cap?P.team.indexOf(null):-1;
+        const dup=P.team.findIndex(x=>canMerge(x,s.u)), empty=P.team.filter(Boolean).length<cap()?P.team.indexOf(null):-1;
         if(dup>=0) consider({k:'buy',i,slot:dup,sc:base+5});
         else if(empty>=0) consider({k:'buy',i,slot:empty,sc:base+4});
         else{
@@ -622,6 +656,7 @@ const ARMY_NAMES = {
   roman:['Legio IX','Eagles of Rome','The Iron Legion','Praetorians'],
   japan:['Crane Clan','Moonlit Blades','Tiger Shogunate','The Forty-Seven'],
   gaul:['Arverni Warband','Sons of Brennus','The Oak Brothers','Boars of Bibracte'],
+  poland:['The Winged Banner','White Eagle Host','The Crown Hetmans','Riders of Kircholm'],
 };
 // foe (optional): {fav, pool, fast, cap (army size), gold (delta per turn), boss:{key,name,bonus}}
 function makeOpponent(turn,rng,foe){
@@ -651,12 +686,13 @@ const REGIONS = {
   norse: {name:'Norse Fjords', army:'viking',   x:140, y:38,  wins:3, danger:1, cap:3, gold:-3, boss:['jarl','Jarl Ragnar',1],       blurb:'Longships line the frozen coast. The Jarl answers to no king.'},
   rome:  {name:'Rome',         army:'roman',    x:129, y:88,  wins:3, danger:1, cap:3, gold:-3, boss:['caesar','Caesar',2],          blurb:'All roads lead here, and a legion guards every one.'},
   sparta:{name:'Sparta',       army:'spartan',  x:153, y:101, wins:4, danger:2, cap:4, gold:-5, boss:['leonidas','King Leonidas',2], blurb:'A city without walls. Its men are the walls.'},
+  poland:{name:'Kraków',       army:'poland',   x:163, y:70,  wins:4, danger:3, cap:4, gold:-5, boss:['husarz','Jan III Sobieski',0], blurb:'The winged riders fight best against the bigger army. Think twice before you bring one.'},
   egypt: {name:'Thebes',       army:'egypt',    x:166, y:121, wins:4, danger:3, cap:4, gold:-2, boss:['pharaoh','The Pharaoh',1],    blurb:'In the valley of the kings, the dead do not rest.'},
   gaul:  {name:'Alesia',       army:'gaul',     x:102, y:90,  wins:5, danger:3, cap:4, gold:-5, boss:['chieftain','Vercingetorix',3], blurb:'Behind the palisade, every tribe of Gaul follows one chief.'},
   japan: {name:'Kyoto',        army:'japan',    x:290, y:82,  wins:5, danger:4, cap:5, gold:-2, boss:['samurai','The Shogun',0],     blurb:'At the edge of the map, the Shogun waits beneath the blossoms.'},
 };
 // [from, to, waypoint x, waypoint y]
-const ROUTES = [['home','norse',112,42],['home','gaul',96,76],['home','rome',118,70],['gaul','rome',115,86],['rome','sparta',141,101],['sparta','egypt',163,110],['norse','japan',215,50],['egypt','japan',232,98]];
+const ROUTES = [['norse','poland',156,52],['rome','poland',147,76],['home','norse',112,42],['home','gaul',96,76],['home','rome',118,70],['gaul','rome',115,86],['rome','sparta',141,101],['sparta','egypt',163,110],['norse','japan',215,50],['egypt','japan',232,98]];
 const REGION_KEYS = Object.keys(REGIONS).filter(k=>k!=='home');
 const neighbours = id => ROUTES.filter(r=>r[0]===id||r[1]===id).map(r=>r[0]===id?r[1]:r[0]);
 const newStory = () => ({conquered:['home'],at:'home',intro:false});
@@ -790,9 +826,10 @@ const THEMES={
   rock:  {sky:['#3c5e8b','#4f8fba','#73bed3','#a4dddb','#e7d5b3'],sun:[252,34,10,'#e7d5b3','#ebede9'],r1:['#ad7757',90,24],r2:['#7a4841',99,10],ground:'#7a4841',road:'#ad7757',rs:['#c09473','#7a4841','#884b2b'],gs:['#4d2b32','#ad7757','#602c2c'],tuft:'#468232',dust:'#d7b594',amb:'dustw'},
   sand:  {sky:['#884b2b','#be772b','#de9e41','#e8c170','#e7d5b3'],sun:[204,40,12,'#e7d5b3','#ebede9'],r1:['#de9e41',94,12],r2:['#be772b',100,7],ground:'#be772b',road:'#de9e41',rs:['#e8c170','#be772b','#da863e'],gs:['#884b2b','#de9e41','#884b2b'],tuft:'#884b2b',dust:'#e8c170',amb:'sand'},
   forest:{sky:['#394a50','#577277','#819796','#a8b5b2','#c7cfcc'],sun:[226,44,10,'#c7cfcc','#ebede9'],r1:['#577277',90,22],r2:['#394a50',99,10],ground:'#25562e',road:'#884b2b',rs:['#be772b','#602c2c','#7a4841'],gs:['#468232','#19332d','#25562e'],tuft:'#75a743',dust:'#c7cfcc',amb:'mist'},
+  fields:{sky:['#3c5e8b','#4f8fba','#73bed3','#a4dddb','#ebede9'],sun:[62,34,9,'#e8c170','#ebede9'],r1:['#468232',92,12],r2:['#de9e41',99,5],ground:'#75a743',road:'#ad7757',rs:['#c09473','#7a4841','#884b2b'],gs:['#a8ca58','#468232','#e8c170','#a8ca58','#cf573c'],tuft:'#e8c170',dust:'#d7b594',amb:'leaf'},
   sakura:{sky:['#1e1d39','#402751','#7a367b','#c65197','#df84a5'],sun:[160,66,22,'#a53030','#cf573c'],r1:['#402751',92,14],r2:['#241527',99,8],ground:'#19332d',road:'#4d2b32',rs:['#7a4841','#341c27','#602c2c'],gs:['#25562e','#10141f','#25562e'],tuft:'#25562e',dust:'#ad7757',amb:'petal'},
 };
-const ARMY_THEME={medieval:'dusk',viking:'snow',roman:'hills',spartan:'rock',egypt:'sand',gaul:'forest',japan:'sakura'};
+const ARMY_THEME={medieval:'dusk',viking:'snow',roman:'hills',spartan:'rock',egypt:'sand',gaul:'forest',japan:'sakura',poland:'fields'};
 function paintField(key){
   const t=THEMES[key], c=mkCanvas(W,H), x=c.getContext('2d'), r=makeRng(21+key.length*7);
   dither(x,t.sky,0,100);
@@ -809,6 +846,12 @@ function paintField(key){
     for(const px of [50,70,254,278]){ rect('#7a4841',px-6,98,12,6); rect('#241527',px-1,100,3,4); tri(x,px,99,9,9,'#de9e41','#be772b'); } }
   if(key==='sakura'){ rect('#a53030',52,84,2,20); rect('#a53030',66,84,2,20); rect('#a53030',48,84,24,2); rect('#752438',50,88,20,1); rect('#a53030',47,82,26,2);
     for(const tx of [286,300]){ rect('#4d2b32',tx,90,2,14); for(const [dx,dy,rr] of [[0,-4,6],[-5,0,4],[6,-1,4],[1,-9,3]]) disc(x,tx+dx,88+dy,rr,rr>4?'#df84a5':'#c65197'); } }
+  if(key==='fields'){ // Wawel on its hill, red roofs and a spire, and a red-and-white banner over the wheat
+    disc(x,250,112,30,'#25562e'); rect('#d7b594',228,78,44,10); rect('#c09473',228,86,44,2); tri(x,250,78,5,23,'#a53030','#752438');
+    for(const [tx,h] of [[230,16],[268,13]]){ rect('#e7d5b3',tx-3,88-h,6,h); rect('#c09473',tx+2,88-h,1,h); tri(x,tx,88-h,6,4,'#a53030','#752438'); rect('#241527',tx-1,92-h,2,3); }
+    rect('#e7d5b3',246,64,5,14); rect('#c09473',250,64,1,14); tri(x,248,64,9,3,'#468232','#25562e'); rect('#e8c170',248,53,1,2);
+    rect('#4d2b32',40,84,1,20); rect('#ebede9',41,84,7,2); rect('#a53030',41,86,7,2);
+    for(const px of [18,84,112,300]){ rect('#7a4841',px,97,1,6); disc(x,px,94,4,'#468232'); disc(x,px-1,93,2,'#75a743'); } }
   if(key==='dusk'){ rect('#241527',36,86,22,18); for(const tx of [34,46,58]){ rect('#241527',tx-1,80,6,24); rect('#241527',tx-2,78,2,3); rect('#241527',tx+3,78,2,3); } rect('#e8c170',44,92,2,3); }
   rect(t.ground,0,102,W,H-102); rect(t.road,0,116,W,24);
   speckle(x,r,116,140,t.rs,200); speckle(x,r,103,116,t.gs,120); speckle(x,r,140,H,t.gs,260);

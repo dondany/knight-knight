@@ -25,17 +25,24 @@ A region can be attacked once a road reaches it from conquered land.
 | Region | Army unlocked | Wins | Rival army size | Rival gold | Champion | Bonus | Roads to |
 |---|---|---|---|---|---|---|---|
 | Camelot (home) | Medieval | – | – | – | – | – | Norse Fjords, Alesia, Rome |
-| Norse Fjords | Vikings | 3 | 3 | 7 | Jarl Ragnar (Jarl) | +1/+2 | Camelot, Kyoto |
-| Rome | Romans | 3 | 3 | 7 | Caesar | +2/+4 | Camelot, Alesia, Sparta |
+| Norse Fjords | Vikings | 3 | 3 | 7 | Jarl Ragnar (Jarl) | +1/+2 | Camelot, Kraków, Kyoto |
+| Rome | Romans | 3 | 3 | 7 | Caesar | +2/+4 | Camelot, Kraków, Alesia, Sparta |
 | Sparta | Spartans | 4 | 4 | 5 | King Leonidas | +2/+4 | Rome, Thebes |
+| Kraków | Poles | 4 | 4 | 5 | Jan III Sobieski (Husarz) | none | Norse Fjords, Rome |
 | Thebes | Egyptians | 4 | 4 | 8 | The Pharaoh | +1/+2 | Sparta, Kyoto |
 | Alesia | Gauls | 5 | 4 | 5 | Vercingetorix (Chieftain) | +3/+6 | Camelot, Rome |
 | Kyoto | Japanese | 5 | 5 | 8 | The Shogun (Samurai) | none | Norse Fjords, Thebes |
 
 Alesia's rivals field only Gauls, like every other land's (they drafted from every army while
 the Gauls were the wild army and had no bonus of their own). Alesia sits next to Camelot and can be
-attacked first; it is rated danger 3 for a player who already owns several armies. Conquering all
-six ends the story.
+attacked first; it is rated danger 3 for a player who already owns several armies.
+
+Kraków is a puzzle more than a wall. Its rivals field four Poles, so a player who marches in with
+five units outnumbers them, and that switches on Against the Odds for the whole rival line before
+the first clash. Match their four and it never fires. The bot conquers Kraków 52% of the time
+fielding five and 72% fielding four; the land's blurb hints at it.
+
+Conquering all seven ends the story.
 
 ## Run structure
 
@@ -81,10 +88,24 @@ A bonus switches on with 2 units of an army and improves with 4. Duplicates coun
 | Romans | Drill | End of turn: a random Roman gains +1 health permanently | Every Roman does | Shop |
 | Japanese | Bushido | Each Japanese unit deals +2 damage with its first attack | +5 | Battle |
 | Gauls | Furor | After a Gaul attacks, it gains +2/+2 | +4/+4 | Battle |
+| Poles | Against the Odds | The first time the enemy outnumbers you in a battle, every Pole gains +2/+2 | +4/+4 | Battle |
 
 Furor goes to a Gaul that attacked and is still standing, after its own after-attack ability, and
 lasts for that battle. Only the front unit attacks, so it rewards keeping one Gaul alive at the
 front: the Carnyx Player's health feeds it, and the Gaesatus stacks his own Frenzy on top.
+
+Against the Odds fires once a battle, the moment the enemy has more units standing than you: at
+the very start if you field the shorter line, otherwise after the deaths that put you behind. It
+lasts for that battle. Four Poles and an empty fifth slot get +4/+4 each before anything else
+happens, and the Hetman's Odsiecz fires at the same moment; a fifth unit delays both until you
+are already losing. The Pancerny's Hold Fast uses the same count but is on for as long as you are
+outnumbered.
+
+It was first written as "Poles deal +2/+4 damage while outnumbered". That tested badly: counting
+only attacks it was worth almost nothing (single-army Poles won 21%, against 16% with no bonus),
+and counting ability damage too it turned the Hetman's Odsiecz into 7 damage to every enemy at
+the start of a battle. The rally is worth as much as the other bonuses and happens at one moment
+you can see.
 
 **Wild is a rule without an army.** The Gauls were the wild army (called Mercenaries before that)
 until their row was complete and they got Furor. The rule is still in the code for a future army:
@@ -136,11 +157,18 @@ Mummies are tokens: no ability, no army bonus, and they are never raised a secon
 | Gauls | Ambactus | 3 | 3/5 | Paid in Gold | End of turn: if you have 2+ unspent gold, gain +1/+1 / +2/+2 / +3/+3 for good. | 2,6 | `ambactus` |
 | Gauls | Gaesatus | 4 | 5/5 | Frenzy | After attack: gain +2 / +4 / +6 attack. | 0,6 | `gaesatus` |
 | Gauls | Chieftain | 5 | 4/5 | Confederation | Start of battle: gain +1/+1 / +2/+2 / +3/+3 for each other Gaul and each other army on your team. | 3,6 | `chieftain` |
+| Poles | Kosynier | 1 | 3/1 | Scythes Upright | Before attack: deal 1 / 2 / 3 damage to the front enemy. | 0,7 | `kosynier` |
+| Poles | Haiduk | 2 | 2/3 | Salvo | Friend ahead faints: deal 3 / 6 / 9 damage to the front enemy. | 4,7 | `haiduk` |
+| Poles | Pancerny | 3 | 3/5 | Hold Fast | Takes 1 / 2 / 3 less damage (min 1) while the enemy has more units standing. | 3,7 | `pancerny` |
+| Poles | Husarz | 5 | 6/5 | Szarża | Its first attack also strikes the enemy / 2 enemies / 3 enemies behind the front. | 1,7 | `husarz` |
+| Poles | Hetman | 6 | 5/7 | Odsiecz | The first time the enemy outnumbers you each battle: deal 3 / 6 / 9 damage to every enemy. | 2,7 | `hetman` |
 
 Trigger vocabulary: *Start of battle* (resolved highest attack first), *Before attack* / *After
 attack* (the front unit), *Friend ahead attacks* (the second unit in line), *Hurt* (took damage
 and survived), *Faint*, *Knockout* (killed the enemy front with its attack), *Friend ahead
-faints*, *Friend faints*, and the shop triggers *Buy*, *Sell*, *End of turn*.
+faints*, *Friend faints*, *Outnumbered* (the first time each battle the enemy has more units
+standing, checked at the start and after every round of deaths), and the shop triggers *Buy*,
+*Sell*, *End of turn*.
 
 ## Items
 
@@ -158,11 +186,14 @@ Supplies are used up. Gear stays on the unit; a unit holds one piece and a new o
 
 ## Battle rules in short
 
-1. Start-of-battle abilities fire in order of attack, highest first.
+1. A side that starts with the shorter line is outnumbered at once: Against the Odds and Odsiecz
+   fire. Then start-of-battle abilities fire in order of attack, highest first.
 2. The two front units hit each other at the same time. First-attack and gear bonuses are added to
    the hit, then blocks and damage reduction apply. Damage never drops below 1 unless blocked.
-3. Support abilities, after-attack abilities, Furor and knockouts fire, then deaths resolve:
-   faint ability, Ankh, Afterlife, Blood Rage, then the reactions of surviving friends.
+3. A Husarz's first attack carries on into the units behind. Support abilities, after-attack
+   abilities, Furor and knockouts fire, then deaths resolve: faint ability, Ankh, Afterlife,
+   Blood Rage, then the reactions of surviving friends. If the deaths leave a side outnumbered for
+   the first time, Against the Odds and Odsiecz fire.
 4. Repeat until a side is empty. Both empty is a draw.
 
 The exact order is in `docs/ARCHITECTURE.md`.
@@ -178,6 +209,9 @@ the same number of turns:
   with whatever gold is left.
 - It wastes 0–2 gold a turn (fixed per rival) so strength varies between opponents.
 - It lines units up by each unit's placement hint, tougher units first within a group.
+- A bot that favours the Poles stops recruiting at four units once all four are Poles, so that
+  Against the Odds fires at the start. That is worth about 5 points to an all-Polish team and
+  costs a mixed team about 5, so it never does it with fewer than four Poles.
 - The army's name comes from whichever army it ended up fielding most.
 - Story rivals are the same bot with a restricted pool, an army-size cap and a fixed income
   (see the region table). Skirmish rivals have no cap and waste 0–2 gold as above.
@@ -186,52 +220,55 @@ the same number of turns:
 
 The backdrop follows the enemy army's homeland: dusk castle (Medieval), snowfield with falling
 snow (Vikings), green hills and an aqueduct (Romans), rocky coast with a temple (Spartans), desert
-and pyramids with blowing sand (Egyptians), a misty oak forest with thatched huts and a palisade (Gauls), and a red
-sun over Fuji with drifting petals (Japanese). Purely cosmetic.
+and pyramids with blowing sand (Egyptians), a misty oak forest with thatched huts and a palisade (Gauls), a red
+sun over Fuji with drifting petals (Japanese), and green fields with a band of wheat, Wawel castle
+on its hill and a red-and-white banner (Poles). Purely cosmetic.
 
 ## Balance snapshot
 
 Bot against bot, from `tools/sim.py`. This says how the armies compare when played by the same
 simple bot. It says nothing about how hard the game is for a person, which has not been measured.
 
-This sweep is small (about 600 battles per army), so each rate is only good to about ±2 points.
-On a 42,000-battle sweep the armies sit within 2.7 points of each other: Medieval 43.7, Vikings
-44.6, Spartans 44.7, Egyptians 43.9, Romans 45.8, Japanese 44.5, Gauls 46.4, with 10.4% draws.
+This sweep is small (about 500 battles per army), so each rate is only good to about ±2 points.
+On a 21,000-battle sweep the armies sit within 2.1 points of each other: Medieval 43.4, Vikings
+43.4, Spartans 45.5, Egyptians 43.4, Romans 44.6, Japanese 43.7, Gauls 45.1, Poles 44.2, with
+11.7% draws.
 
-Those bots favour one army but draft from all seven, so an army bonus barely shows. With every
+Those bots favour one army but draft from all eight, so an army bonus barely shows. With every
 bot restricted to a single army (turns 2 to 12, each army against each other), the bonuses decide
-it: Medieval 43, Vikings 50, Spartans 29, Egyptians 43, Romans 56, Japanese 47, Gauls 47. Furor
-was sized on that test: without a bonus the Gauls win 15% of those battles, about where the
-other armies land with their bonus switched off (18 to 35%), and a smaller Furor of +1/+2 attack
-only brought them to 20%.
+it: Medieval 42, Vikings 50, Spartans 27, Egyptians 43, Romans 54, Japanese 46, Gauls 43, Poles
+50. Furor and Against the Odds were both sized on that test: without a bonus the Gauls win 15% of
+those battles and the Poles 16%, about where the other armies land with their bonus switched off
+(18 to 35%).
 
 ```
-battles 2100  draws 9.7%  maxRounds 19  maxEvents 122
+battles 2100  draws 12.3%  maxRounds 16  maxEvents 113
 
 win rate by the bot's favoured army (bot vs bot):
-  medieval 43.0%
-  viking   43.3%
-  spartan  45.0%
-  egypt    46.0%
-  roman    44.0%
-  japan    46.4%
-  gaul     48.1%
+  medieval 41.4%
+  viking   47.0%
+  spartan  44.2%
+  egypt    41.1%
+  roman    43.7%
+  japan    45.2%
+  gaul     45.6%
+  poland   43.0%
 
 bot army strength by turn:
   turn  1  stats/unit 4.4  tier 1.00  lvl 1.01
-  turn  2  stats/unit 5.2  tier 1.03  lvl 1.05
-  turn  3  stats/unit 6.1  tier 1.33  lvl 1.09
-  turn  4  stats/unit 6.8  tier 1.54  lvl 1.15
-  turn  5  stats/unit 8.0  tier 1.92  lvl 1.22
-  turn  6  stats/unit 8.8  tier 2.18  lvl 1.26
-  turn  7  stats/unit 10.0  tier 2.58  lvl 1.28
-  turn  8  stats/unit 11.0  tier 2.87  lvl 1.33
-  turn  9  stats/unit 12.0  tier 3.34  lvl 1.34
-  turn 10  stats/unit 13.0  tier 3.71  lvl 1.37
-  turn 11  stats/unit 13.9  tier 3.98  lvl 1.42
-  turn 12  stats/unit 14.9  tier 4.13  lvl 1.46
-  turn 13  stats/unit 15.8  tier 4.40  lvl 1.52
-  turn 14  stats/unit 17.0  tier 4.38  lvl 1.65
+  turn  2  stats/unit 5.1  tier 1.03  lvl 1.05
+  turn  3  stats/unit 5.9  tier 1.32  lvl 1.07
+  turn  4  stats/unit 6.7  tier 1.54  lvl 1.14
+  turn  5  stats/unit 7.7  tier 1.95  lvl 1.17
+  turn  6  stats/unit 8.4  tier 2.16  lvl 1.22
+  turn  7  stats/unit 9.5  tier 2.63  lvl 1.24
+  turn  8  stats/unit 10.5  tier 2.91  lvl 1.30
+  turn  9  stats/unit 11.8  tier 3.36  lvl 1.31
+  turn 10  stats/unit 12.5  tier 3.76  lvl 1.34
+  turn 11  stats/unit 13.7  tier 4.09  lvl 1.36
+  turn 12  stats/unit 14.3  tier 4.36  lvl 1.37
+  turn 13  stats/unit 15.3  tier 4.49  lvl 1.46
+  turn 14  stats/unit 16.4  tier 4.52  lvl 1.55
 
 abilities that never fired: none
 ```
@@ -250,8 +287,11 @@ region     wins danger | conquest%  boss-battle win%  avg battles | solo conques
 norse      3    1      |    88%        34%            5.2        |    87%
 rome       3    1      |    83%        41%            5.4        |    94%
 sparta     4    2      |    75%        29%            5.6        |    98%
-egypt      4    3      |    73%        33%            5.7        |    88%
-gaul       5    3      |    66%        29%            6.5        |   100%
-japan      5    4      |    50%        30%            6.7        |    96%
+poland     4    3      |    52%        19%            6.0        |    98%
+egypt      4    3      |    62%        27%            5.8        |    82%
+gaul       5    3      |    67%        30%            6.5        |   100%
+japan      5    4      |    58%        32%            6.7        |    95%
+
+poland, with a player who fields only 4 units: conquest 72%, boss-battle win 28%
 ```
 

@@ -25,7 +25,7 @@ Everything lives in `index.html`: a `<style>` block, the DOM overlay markup, and
 |---|---|
 | `CAP, COST, LIVES, WINS` | Stat cap 50, price 3; skirmish defaults of 5 lives and 10 wins |
 | `makeRng(seed)` | Seeded RNG with `.int`, `.pick`, `.shuffle` |
-| `FACTIONS`, `ARMIES`, `REAL_F` | Army names, colours, bonus text. `ARMIES` is every army key; `REAL_F` leaves out armies flagged `wild:true` (none today) |
+| `FACTIONS`, `ARMIES`, `REAL_F` | Army names, colours, bonus text. `ARMIES` is every army key; `REAL_F` leaves out armies flagged `wild:true` (none today). `field` on an army is where a bot that favours it stops recruiting once it fields that many of its units (Poles: 4) |
 | `def(...)` / `UNITS` | Unit table. One `def` call per unit |
 | `ITEMS` | Supplies and gear |
 | `synergies(units)`, `isWild(army)` | `{army: {n, w, lvl}}`; a unit of a wild army adds 1 to every army that already has 2 real members (`w` = wilds counted) |
@@ -142,25 +142,30 @@ embedded copy current.
 `simulateBattle` clones both teams into battle units
 `{id, key, def, side, atk, hp, hp0, lvl, gear, block, dead, risen?, mummy?}` and runs:
 
-1. Emit `init`. Fire `start` abilities, highest attack first, resolving deaths after each.
+1. Emit `init`, then `resolve()` once so a side that starts with the shorter line is outnumbered
+   from the first moment. Fire `start` abilities, highest attack first, resolving deaths after each.
 2. Loop while both sides have units: `beforeAttack` for both fronts → `attack` → damage exchange
-   (a unit with `iaido` strikes first and takes nothing back if it kills) → `friendAheadAttacks`
+   (a unit with `iaido` strikes first and takes nothing back if it kills) → a `charge` unit's
+   first blow carries on into the units behind the front → `friendAheadAttacks`
    for the second in line → `afterAttack` → Gallic Furor for a front unit that is still standing
    → `knockout` → resolve deaths.
-3. `resolve()` handles each death in order: remove the unit, its `faint` ability, Ankh revival,
-   Egyptian Afterlife, Viking Blood Rage, `friendAheadFaints` for the unit behind, `friendFaints`
-   for everyone on that side.
+3. `resolve()` runs `deaths()`, which handles each death in order: remove the unit, its `faint`
+   ability, Ankh revival, Egyptian Afterlife, Viking Blood Rage, `friendAheadFaints` for the unit
+   behind, `friendFaints` for everyone on that side. Then `relief()` checks both sides: a side
+   with fewer units standing than the enemy gets Against the Odds (once a battle) and its
+   `outnumbered` abilities (once per unit). If those kill anything, the loop runs again.
 
 Damage goes through `hit()`: blocks absorb the hit entirely; otherwise armour (`def.armor`), the
 Spartan bonus and Chainmail reduce it, to a minimum of 1. Summons fail quietly when the side
 already has 5 living units.
 
 Ability hooks live on a unit's `def.on`: `start`, `beforeAttack`, `afterAttack`, `hurt`, `faint`,
-`knockout`, `friendAheadAttacks`, `friendAheadFaints`, `friendFaints`. They receive `(u, B, …)`
+`knockout`, `friendAheadAttacks`, `friendAheadFaints`, `friendFaints`, `outnumbered`. They receive `(u, B, …)`
 where `B` offers `foes`, `allies`, `isF`, `say`, `buff`, `buffAll`, `hit`, `shoot`, `summon`,
 `ward`, `kick`, `rng`. An ability calls `B.say(u)` itself when it actually does something, so no
 callout appears for a no-op. Shop-phase hooks live on `def.shop`: `buy`, `sell`, `endTurn`.
-Passive flags on the def: `blocks`, `armor`, `iaido`.
+Passive flags on the def: `blocks`, `armor`, `iaido`, `holdfast` (armour only while outnumbered),
+`charge` (first attack also hits the 1/2/3 units behind the front).
 
 ### Event log
 
@@ -232,10 +237,15 @@ needs no unit), its effect in `useItem` or in the simulator (`hit`, `strike`, `r
 icon in `ART`, and for gear a 5×5 `g_<key>` marker. Give it a `short` of about a dozen
 characters for the shop card.
 
-**Add an army.** An entry in `FACTIONS` (`ARMIES` and `REAL_F` follow from it), names in
-`ARMY_NAMES`, a battlefield in `ARMY_THEME`, and the bonus itself wherever it applies
+**Add an army.** A row on the sprite sheet (then `tools/embed_sprite.py`, the two sheet sizes in
+the `.spr` rules of `docs/guide.css`, and the sheet line in `CLAUDE.md`), an entry in `FACTIONS`
+(`ARMIES` and `REAL_F` follow from it), names in `ARMY_NAMES`, a battlefield in `ARMY_THEME`, a
+region for Story, its id in `ORDER` in `tools/story.js`, and the bonus itself wherever it applies
 (`startTurn`/`endTurn` for shop effects, `sl(u, f)` checks in the simulator for battle effects; a
 bonus that fires more than once a battle sets `again` on its repeat `syn` events, as Furor does).
+Size the bonus by pitting single-army bot teams against each other (`makeOpponent(turn, rng,
+{fav, pool: armyUnits(fav)})`): the mixed sweep in `tools/sim.js` hardly notices a bonus. The Poles
+were the last army added this way.
 
 **Add the wild army.** The wild rule is in the code but no army uses it. Give the `FACTIONS` entry
 `wild:true`, `syn:'Wild'` and one line of text in `tiers[0]` (leave `tiers[1]` empty). Everything

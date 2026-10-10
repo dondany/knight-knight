@@ -42,9 +42,24 @@ it by hand, so the things that only show up in motion are unverified:
   in a mixed draft is the strongest of the seven by about half a point, which is inside the noise.
   Whether one Gaul snowballing at the front is fun to play with or against is unknown. If it is
   too much, the numbers are the `2*sl(u,'gaul')` in `simulateBattle`.
+- **The Poles are new and only the bot has played them.** They are the eighth army: Kosynier,
+  Haiduk, Pancerny, Husarz and Hetman, with Kraków as their land. Against the Odds gives every
+  Pole +2/+2 (+4/+4 with four) the first time the enemy outnumbers you in a battle. Whether
+  leaving a slot empty on purpose feels clever or just odd is unknown; for an all-Polish bot it
+  is worth about 5 points.
+- **Against the Odds is not the bonus first proposed.** "Poles deal more damage while outnumbered"
+  was nearly worthless on attacks alone and absurd once it added to the Hetman's hit on every
+  enemy. The numbers are in `docs/DESIGN.md`. The bonus that went in is a single rally.
+- **Kraków punishes the obvious line-up.** Its rivals field four, so a full army of five sets off
+  their rally. The bot wins 52% with five units and 72% with four; a player who does not read the
+  blurb may find a danger-3 land much harder than it looks. The champion is Jan III Sobieski as
+  a Husarz with no stat bonus: as a Hetman his Odsiecz hit a five-unit player at the start of
+  the last battle and the bot won 4% of expeditions.
+- **Kyoto reads a little easy now.** With the Poles in the pool the bot conquers it 58% of the
+  time (800 runs) against a 45 to 55% target for danger 4. A champion bonus of +1 brings it to 51%.
 - **The Ambactus's ability never fires for the bot**, because it never leaves 2 gold unspent. The
   ability also dates from when he was the Sellsword of the Mercenaries.
-- **Skirmish balance.** The armies are within 2.7 points of each other on a large sweep. Draws are
+- **Skirmish balance.** The armies are within 2.1 points of each other on a large sweep. Draws are
   about 10% of battles and cost nothing.
 - **Late skirmish.** Bot armies plateau around tier 4 and level 1.7 by turn 14.
 - **Unit names and abilities** were assigned by looking at each sprite. Some are guesses.
@@ -76,13 +91,12 @@ it by hand, so the things that only show up in motion are unverified:
 
 ## Ideas
 
-Worked-out proposals live in `docs/ideas.html`: three more units for every army, six new armies
-with a land each (the Poles, built around the winged hussars and fighting best when outnumbered,
-are the latest), the Mercenaries as the wild army (for hire from the start, which fixes the thin
+Worked-out proposals live in `docs/ideas.html`: three more units for every army, five new armies
+with a land each, the Mercenaries as the wild army (for hire from the start, which fixes the thin
 story start), and a table of ideas from other auto-battlers with the best fits marked. The three
-Gauls from that list are drawn and in the game; the other 53 proposed units have no sprite yet.
-`docs/art-refs.html` has a drawing brief and reference pictures for 43 of them; the Poles and the
-Mercenaries have none yet. The short list below is the rest.
+Gauls and the five Poles from that page are drawn and in the game; the other 48 proposed units
+have no sprite yet. `docs/art-refs.html` has a drawing brief and reference pictures for 43 of
+them; the Mercenaries have none yet. The short list below is the rest.
 
 - Campaign depth: persistent veterans, a relic per conquered land, optional side battles, a final
   boss fielding every army.
