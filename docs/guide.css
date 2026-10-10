@@ -53,8 +53,8 @@ td.k{white-space:nowrap;color:var(--gold);font:22px/1.2 var(--px)}
 tr:hover td{background:rgba(32,46,55,.45)}
 
 /* sprites: cells of ../characters.PNG, shown at 4x */
-.spr{display:block;flex:none;width:64px;height:64px;background:url(../characters.PNG) calc(var(--x)*-4px) calc(var(--y)*-4px)/320px 448px no-repeat #151d28;image-rendering:pixelated;image-rendering:crisp-edges}
-.spr.sm{width:32px;height:32px;background-position:calc(var(--x)*-2px) calc(var(--y)*-2px);background-size:160px 224px}
+.spr{display:block;flex:none;width:64px;height:64px;background:url(../characters.PNG) calc(var(--x)*-4px) calc(var(--y)*-4px)/320px 512px no-repeat #151d28;image-rendering:pixelated;image-rendering:crisp-edges}
+.spr.sm{width:32px;height:32px;background-position:calc(var(--x)*-2px) calc(var(--y)*-2px);background-size:160px 256px}
 .ico{display:block;flex:none;width:40px;height:40px}
 
 .army{margin:26px 0 0;border-top:4px solid var(--c);background:linear-gradient(var(--panel),transparent 140px);padding:16px 16px 4px}
